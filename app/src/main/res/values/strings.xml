@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">班级事务记录</string>
+    <string name="widget_name">未完成人数</string>
+    <string name="widget_description">显示近期进行中事务的未完成人数，点按打开应用。</string>
+    <string name="widget_unfinished">未完成</string>
+</resources>

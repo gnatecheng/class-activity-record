@@ -1,0 +1,7 @@
+<resources>
+    <color name="ic_launcher_bg">#2962FF</color>
+    <color name="widget_bg">#EEF2FF</color>
+    <color name="widget_title">#1A1C22</color>
+    <color name="widget_count">#2962FF</color>
+    <color name="widget_caption">#434655</color>
+</resources>
