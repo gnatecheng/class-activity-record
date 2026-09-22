@@ -69,13 +69,27 @@ class MembersViewModel(
     val sortByStudentNo = userPrefs.sortByStudentNo
 
     fun previewImport(raw: String): RosterParseResult {
-        val existing = members.value.filter { !it.archived }.map { it.name }.toSet()
+        val existing = members.value.map {
+            com.classrecord.app.data.ExistingRosterPerson(
+                id = it.id,
+                name = it.name,
+                studentNo = it.studentNo,
+                archived = it.archived
+            )
+        }
         return RosterParser.parse(raw, existing)
     }
 
-    suspend fun confirmImport(raw: String): Int {
+    suspend fun confirmImport(raw: String): String {
         val preview = previewImport(raw)
-        return memberRepository.addAll(preview.toInsert)
+        val added = memberRepository.addAll(preview.toInsert)
+        val restored = memberRepository.restoreArchived(preview.toRestore)
+        return when {
+            added == 0 && restored == 0 -> "没有可导入的新同学"
+            restored == 0 -> "已导入 $added 人"
+            added == 0 -> "已恢复归档 $restored 人，历史事务记录仍保留"
+            else -> "已导入 $added 人，恢复归档 $restored 人"
+        }
     }
 }
 
@@ -162,9 +176,9 @@ fun MembersScreen(onBack: () -> Unit, onEdit: (Long?) -> Unit) {
             onConfirm = { raw ->
                 scope.launch {
                     runCatching { vm.confirmImport(raw) }
-                        .onSuccess { count ->
+                        .onSuccess { message ->
                             showImport = false
-                            snackbar.showSnackbar(if (count == 0) "没有可导入的新同学" else "已导入 $count 人")
+                            snackbar.showSnackbar(message)
                         }
                         .onFailure { snackbar.showSnackbar(it.message ?: "导入失败") }
                 }
@@ -188,7 +202,7 @@ private fun ImportMembersDialog(
         text = {
             Column {
                 Text(
-                    "每行一位，或用逗号、顿号分隔。支持「姓名 学号」「姓名,学号」。已在班的同名会跳过。",
+                    "每行一位，或用逗号、顿号、Tab 分隔。支持「姓名 学号」「学号 姓名」。同名或同学号会提示；已归档的可一并恢复，历史事务记录仍保留。",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -199,13 +213,16 @@ private fun ImportMembersDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(180.dp),
-                    placeholder = { Text("张三\n李四 2023002\n王五,2023003\n赵六、钱七") }
+                    placeholder = { Text("张三\n李四 2023002\n2023003 王五\n赵六、钱七") }
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "将导入 ${preview.insertCount} 人" +
-                        (if (preview.skippedDuplicate > 0) "，跳过重名 ${preview.skippedDuplicate}" else "") +
-                        (if (preview.skippedBlank > 0) "，空行 ${preview.skippedBlank}" else ""),
+                    buildString {
+                        append("将导入 ${preview.insertCount} 人")
+                        if (preview.restoreCount > 0) append("，恢复归档 ${preview.restoreCount} 人")
+                        if (preview.skippedDuplicate > 0) append("，跳过冲突 ${preview.skippedDuplicate}")
+                        if (preview.skippedBlank > 0) append("，空行 ${preview.skippedBlank}")
+                    },
                     style = MaterialTheme.typography.bodyMedium
                 )
                 if (preview.toInsert.isNotEmpty()) {
@@ -217,13 +234,37 @@ private fun ImportMembersDialog(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+                if (preview.toRestore.isNotEmpty()) {
+                    Text(
+                        "将恢复：" + preview.toRestore.take(6).joinToString("、") { it.name } +
+                            if (preview.toRestore.size > 6) "…" else "",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.appColors.success
+                    )
+                }
+                if (preview.conflicts.isNotEmpty()) {
+                    Text(
+                        preview.conflicts.take(6).joinToString("\n") { it.hint } +
+                            if (preview.conflicts.size > 6) "\n…" else "",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.appColors.warning
+                    )
+                }
             }
         },
         confirmButton = {
             TextButton(
                 onClick = { onConfirm(text) },
-                enabled = preview.insertCount > 0
-            ) { Text("导入 ${preview.insertCount} 人") }
+                enabled = preview.insertCount > 0 || preview.restoreCount > 0
+            ) {
+                val label = when {
+                    preview.restoreCount > 0 && preview.insertCount > 0 ->
+                        "导入 ${preview.insertCount}、恢复 ${preview.restoreCount}"
+                    preview.restoreCount > 0 -> "恢复 ${preview.restoreCount} 人"
+                    else -> "导入 ${preview.insertCount} 人"
+                }
+                Text(label)
+            }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("取消") }
@@ -399,6 +440,12 @@ fun MemberEditScreen(memberId: Long?, onDone: () -> Unit) {
                         )
                     )
                 }
+                Text(
+                    "归档后不再进入新事务，历史点名、缴费记录会保留。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
             }
         }
     }

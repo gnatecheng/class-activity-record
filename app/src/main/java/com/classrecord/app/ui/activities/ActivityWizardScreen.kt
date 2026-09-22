@@ -16,9 +16,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.Button
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -440,6 +442,7 @@ private fun TypeCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DetailsStep(
     state: WizardState,
@@ -471,6 +474,23 @@ private fun DetailsStep(
             },
             singleLine = true
         )
+        state.type?.let { type ->
+            Spacer(Modifier.height(8.dp))
+            Text("快捷模板", style = MaterialTheme.typography.labelMedium)
+            Spacer(Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                com.classrecord.app.data.ActivityTemplates.titles(type).forEach { preset ->
+                    FilterChip(
+                        selected = state.title == preset,
+                        onClick = { onTitle(preset) },
+                        label = { Text(preset) }
+                    )
+                }
+            }
+        }
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(
             value = state.note,

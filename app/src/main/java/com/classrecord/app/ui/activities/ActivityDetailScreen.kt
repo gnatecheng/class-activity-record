@@ -6,6 +6,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -185,6 +187,22 @@ class ActivityDetailViewModel(
         return file
     }
 
+    suspend fun unfinishedCsvFile(): java.io.File {
+        val current = activityRepository.snapshot(activityId) ?: error("事务不存在")
+        val dir = java.io.File(appContext.cacheDir, "export").also { it.mkdirs() }
+        val file = java.io.File(dir, "${current.activity.title}-未完成.csv")
+        file.writeBytes(Csv.withBom(Csv.unfinished(current)))
+        return file
+    }
+
+    suspend fun unfinishedTextFile(): java.io.File {
+        val current = activityRepository.snapshot(activityId) ?: error("事务不存在")
+        val dir = java.io.File(appContext.cacheDir, "export").also { it.mkdirs() }
+        val file = java.io.File(dir, "${current.activity.title}-未完成.txt")
+        file.writeText(ActivityCopyText.unfinishedPlain(current), Charsets.UTF_8)
+        return file
+    }
+
     suspend fun setArchived(archived: Boolean) {
         activityRepository.setArchived(activityId, archived)
     }
@@ -317,6 +335,34 @@ fun ActivityDetailScreen(
                                 }
                             }
                         )
+                        DropdownMenuItem(
+                            text = { Text("导出未完成 CSV") },
+                            onClick = {
+                                menuOpen = false
+                                scope.launch {
+                                    runCatching { vm.unfinishedCsvFile() }
+                                        .onSuccess {
+                                            com.classrecord.app.ui.settings.shareFile(
+                                                context,
+                                                it,
+                                                "text/csv",
+                                                "分享未完成 CSV"
+                                            )
+                                        }
+                                        .onFailure { snackbar.showSnackbar(it.message ?: "无法导出") }
+                                }
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("复制未完成名单") },
+                            onClick = {
+                                menuOpen = false
+                                current?.let {
+                                    clipboard.setText(AnnotatedString(ActivityCopyText.unfinishedPlain(it)))
+                                    scope.launch { snackbar.showSnackbar("已复制未完成名单") }
+                                }
+                            }
+                        )
                         if (current?.activity?.type == ActivityType.SPLIT) {
                             DropdownMenuItem(
                                 text = { Text("调整分摊") },
@@ -441,6 +487,57 @@ fun ActivityDetailScreen(
                             )
                         }
                     }
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "催缴与导出可直接发微信群：一人一行，含金额。",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = {
+                            clipboard.setText(AnnotatedString(ActivityCopyText.reminder(current)))
+                            scope.launch { snackbar.showSnackbar("已复制催缴文案") }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("复制催缴（微信）") }
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = {
+                            clipboard.setText(AnnotatedString(ActivityCopyText.unfinishedPlain(current)))
+                            scope.launch { snackbar.showSnackbar("已复制未完成名单") }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("复制未完成名单") }
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = {
+                            val send = Intent(Intent.ACTION_SEND).apply {
+                                setType("text/plain")
+                                putExtra(Intent.EXTRA_TEXT, ActivityCopyText.reminder(current))
+                            }
+                            context.startActivity(Intent.createChooser(send, "分享催缴文案"))
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("分享催缴") }
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = {
+                            scope.launch {
+                                runCatching { vm.unfinishedTextFile() }
+                                    .onSuccess {
+                                        com.classrecord.app.ui.settings.shareFile(
+                                            context,
+                                            it,
+                                            "text/plain",
+                                            "分享未完成名单"
+                                        )
+                                    }
+                                    .onFailure { snackbar.showSnackbar(it.message ?: "无法导出") }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("分享未完成文本") }
                     if (type == ActivityType.PAYMENT || type == ActivityType.SPLIT) {
                         Spacer(Modifier.height(8.dp))
                         OutlinedButton(
@@ -569,9 +666,24 @@ fun ActivityDetailScreen(
             text = {
                 Column {
                     Text(
-                        "将按当前名单重新快照，不复制完成状态。",
+                        "将按当前名单重新快照，不复制完成状态。可点模板快速改标题。",
                         style = MaterialTheme.typography.bodySmall
                     )
+                    current?.activity?.type?.let { type ->
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            com.classrecord.app.data.ActivityTemplates.titles(type).forEach { preset ->
+                                FilterChip(
+                                    selected = editable == preset,
+                                    onClick = { editable = preset },
+                                    label = { Text(preset) }
+                                )
+                            }
+                        }
+                    }
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
                         value = editable,

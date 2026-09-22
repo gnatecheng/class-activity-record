@@ -4,6 +4,7 @@ import androidx.room.withTransaction
 import com.classrecord.app.data.LedgerMath
 import com.classrecord.app.data.Money
 import com.classrecord.app.data.ParsedMember
+import com.classrecord.app.data.RestoreCandidate
 import com.classrecord.app.data.SplitPlan
 import com.classrecord.app.data.SplitShare
 import com.classrecord.app.data.db.AppDatabase
@@ -125,6 +126,24 @@ class MemberRepository(private val db: AppDatabase) {
         }
         return db.withTransaction {
             dao.insertAll(rows).size
+        }
+    }
+
+    suspend fun restoreArchived(candidates: List<RestoreCandidate>): Int {
+        if (candidates.isEmpty()) return 0
+        return db.withTransaction {
+            var count = 0
+            candidates.forEach { candidate ->
+                val current = dao.getById(candidate.memberId) ?: return@forEach
+                dao.update(
+                    current.copy(
+                        archived = false,
+                        studentNo = candidate.studentNo?.trim()?.ifBlank { null } ?: current.studentNo
+                    )
+                )
+                count += 1
+            }
+            count
         }
     }
 }

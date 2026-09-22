@@ -58,6 +58,40 @@ object Csv {
         return lines.joinToString("\n")
     }
 
+    fun unfinished(detail: ActivityDetail): String {
+        val type = detail.activity.type
+        val pending = detail.rows.filter {
+            it.member.status == MemberStatus.PENDING && it.member.included
+        }
+        val lines = mutableListOf(
+            row("事务", "姓名", "学号", "应缴（元）", "已缴（元）", "尚欠（元）")
+        )
+        pending.forEach { row ->
+            val due = row.member.amountDue
+            val paid = row.member.amountPaid
+            val left = if (due != null || paid != null) {
+                ((due ?: 0L) - (paid ?: 0L)).coerceAtLeast(0L)
+            } else {
+                null
+            }
+            lines += row(
+                detail.activity.title,
+                row.name,
+                row.studentNo.orEmpty(),
+                due?.let { Money.formatFen(it) }.orEmpty(),
+                paid?.let { Money.formatFen(it) }.orEmpty(),
+                left?.let { Money.formatFen(it) }.orEmpty()
+            )
+        }
+        if (type == ActivityType.PAYMENT || type == ActivityType.SPLIT) {
+            val dueSum = pending.sumOf { it.member.amountDue ?: 0L }
+            val paidSum = pending.sumOf { it.member.amountPaid ?: 0L }
+            val leftSum = (dueSum - paidSum).coerceAtLeast(0L)
+            lines += row("合计", "", "", Money.formatFen(dueSum), Money.formatFen(paidSum), Money.formatFen(leftSum))
+        }
+        return lines.joinToString("\n")
+    }
+
     fun allActivities(details: List<ActivityDetail>): String {
         val lines = mutableListOf(
             row("事务", "类型", "范围", "姓名", "学号", "状态", "参与分摊", "应缴（元）", "已缴（元）", "备注")

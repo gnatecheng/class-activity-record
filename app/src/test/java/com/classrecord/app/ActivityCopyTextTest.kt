@@ -34,7 +34,7 @@ class ActivityCopyTextTest {
                 ActivityMemberRow(
                     member = ActivityMember(1, 2, MemberStatus.PENDING, 5000, 0, null, updatedAt = 0),
                     name = "李四",
-                    studentNo = null
+                    studentNo = "2023002"
                 )
             )
         )
@@ -51,10 +51,22 @@ class ActivityCopyTextTest {
     }
 
     @Test
-    fun reminderListsPendingWithAmount() {
+    fun reminderIsWeChatReadyNumberedList() {
         val text = ActivityCopyText.reminder(paymentDetail())
-        assertTrue(text.startsWith("【催缴】秋游费用（全班）"))
-        assertTrue(text.contains("李四（50.00 元）"))
+        assertTrue(text.startsWith("【催缴】秋游费用"))
+        assertTrue(text.contains("全班 · 缴费"))
+        assertTrue(text.contains("未完成 1 人，合计 50.00 元"))
+        assertTrue(text.contains("1. 李四（2023002）  尚欠 50.00 元"))
+        assertTrue(!text.contains("张三"))
+        assertTrue(!text.contains("、"))
+    }
+
+    @Test
+    fun unfinishedPlainIsTabSeparated() {
+        val text = ActivityCopyText.unfinishedPlain(paymentDetail())
+        assertTrue(text.startsWith("秋游费用 未完成名单"))
+        assertTrue(text.contains("李四（2023002）\t50.00"))
+        assertTrue(text.contains("合计\t50.00"))
         assertTrue(!text.contains("张三"))
     }
 
