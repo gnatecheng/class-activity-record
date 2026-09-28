@@ -1,0 +1,74 @@
+name: Release APK
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install Android SDK packages
+        run: |
+          echo "ANDROID_HOME=${ANDROID_HOME}"
+          SDKM="$(ls -d "${ANDROID_HOME}"/cmdline-tools/*/bin/sdkmanager | sort -V | tail -n 1)"
+          echo "sdkmanager=${SDKM}"
+          yes | "${SDKM}" --licenses >/dev/null || true
+          "${SDKM}" "platforms;android-35" "build-tools;35.0.0" "build-tools;34.0.0"
+
+      - name: Read versionName
+        id: version
+        run: |
+          VERSION_NAME=$(grep -m1 'versionName = "' app/build.gradle.kts | sed 's/.*versionName = "\([^"]*\)".*/\1/')
+          echo "name=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
+          echo "versionName=${VERSION_NAME}"
+
+      - name: Build debug APK
+        run: |
+          chmod +x ./gradlew
+          ./gradlew :app:assembleDebug --no-daemon
+
+      - name: Prepare release asset
+        run: |
+          VERSION_NAME="${{ steps.version.outputs.name }}"
+          TAG="${GITHUB_REF_NAME}"
+          APK_NAME="class-activity-record-${VERSION_NAME}-${TAG}.apk"
+          SRC="$(ls app/build/outputs/apk/debug/*.apk | head -n 1)"
+          cp "${SRC}" "${APK_NAME}"
+          echo "APK_NAME=${APK_NAME}" >> "$GITHUB_ENV"
+          ls -la "${APK_NAME}"
+
+      - name: Write release notes
+        run: |
+          {
+            echo "## 班级事务记录 ${{ steps.version.outputs.name }}"
+            echo
+            echo "调试包（assembleDebug），下载 APK 后直接安装即可。"
+            echo
+            echo "Tag: ${GITHUB_REF_NAME}"
+          } > release_body.md
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: 班级事务记录 ${{ steps.version.outputs.name }}
+          body_path: release_body.md
+          files: ${{ env.APK_NAME }}
+          fail_on_unmatched_files: true
