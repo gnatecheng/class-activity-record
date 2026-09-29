@@ -16,12 +16,15 @@ object LocaleApplier {
         AppCompatDelegate.setApplicationLocales(applicationLocalesFor(language))
     }
 
-    fun syncFromBlocking(context: Context): AppLanguage {
-        val prefs = context.getSharedPreferences(PREFS_BOOT, Context.MODE_PRIVATE)
-        val stored = prefs.getString(KEY_LANGUAGE, null)
-        val mode = AppLanguage.fromStorage(stored)
-        apply(mode)
-        return mode
+    /** Maps AppCompat application locales back to the in-app language setting. */
+    fun readAppliedLanguage(): AppLanguage {
+        val locales = AppCompatDelegate.getApplicationLocales()
+        if (locales.isEmpty) return AppLanguage.SYSTEM
+        return when (locales[0]?.language) {
+            "en" -> AppLanguage.EN
+            "zh" -> AppLanguage.ZH
+            else -> AppLanguage.SYSTEM
+        }
     }
 
     fun persistForBoot(context: Context, language: AppLanguage) {
@@ -31,6 +34,12 @@ object LocaleApplier {
             .apply()
     }
 
-    private const val PREFS_BOOT = "locale_boot"
+    fun readBootLanguage(context: Context): AppLanguage? {
+        val stored = context.getSharedPreferences(PREFS_BOOT, Context.MODE_PRIVATE)
+            .getString(KEY_LANGUAGE, null)
+        return stored?.let { AppLanguage.fromStorage(it) }
+    }
+
+    const val PREFS_BOOT = "locale_boot"
     private const val KEY_LANGUAGE = "app_language"
 }

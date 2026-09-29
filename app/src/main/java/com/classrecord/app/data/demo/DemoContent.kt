@@ -10,6 +10,8 @@ internal data class DemoActivitySpec(
     val perPersonDueFen: Long? = null,
     val totalSplitFen: Long? = null,
     val paidCount: Int? = null,
+    /** Members marked done (present / checked off) for attendance or checklist demos. */
+    val doneCount: Int? = null,
 )
 
 internal object DemoContent {
@@ -43,9 +45,16 @@ internal object DemoContent {
         subgroupMemberIndices = listOf(0, 1, 2, 3),
         activities = listOf(
             DemoActivitySpec(
-                title = "Sports day sign-up",
+                title = "Morning roll call",
                 type = com.classrecord.app.data.entity.ActivityType.ATTENDANCE,
-                note = "Confirm who is joining the relay teams.",
+                note = "First period homeroom check-in.",
+                doneCount = 8,
+            ),
+            DemoActivitySpec(
+                title = "Sports day sign-up",
+                type = com.classrecord.app.data.entity.ActivityType.CHECKLIST,
+                note = "Sign up for relay and field events.",
+                doneCount = 9,
             ),
             DemoActivitySpec(
                 title = "Autumn trip fee",
@@ -57,14 +66,9 @@ internal object DemoContent {
             DemoActivitySpec(
                 title = "Dorm water split",
                 type = com.classrecord.app.data.entity.ActivityType.SPLIT,
-                note = "March utility bill for Dorm 301.",
+                note = "September water bill for Dorm 301.",
                 scopeSubgroup = true,
                 totalSplitFen = 12_000L,
-            ),
-            DemoActivitySpec(
-                title = "Homework checklist",
-                type = com.classrecord.app.data.entity.ActivityType.CHECKLIST,
-                note = "Week 3 lab report.",
             ),
         ),
         ledgerIncomeTitle = "Class fund top-up",
@@ -91,9 +95,16 @@ internal object DemoContent {
         subgroupMemberIndices = listOf(0, 1, 2, 3),
         activities = listOf(
             DemoActivitySpec(
-                title = "运动会报名",
+                title = "早自习点名",
                 type = com.classrecord.app.data.entity.ActivityType.ATTENDANCE,
-                note = "确认接力参赛名单。",
+                note = "第一节课前签到。",
+                doneCount = 8,
+            ),
+            DemoActivitySpec(
+                title = "运动会报名",
+                type = com.classrecord.app.data.entity.ActivityType.CHECKLIST,
+                note = "接力、田赛项目报名。",
+                doneCount = 9,
             ),
             DemoActivitySpec(
                 title = "秋游费用",
@@ -105,14 +116,9 @@ internal object DemoContent {
             DemoActivitySpec(
                 title = "寝室水电分摊",
                 type = com.classrecord.app.data.entity.ActivityType.SPLIT,
-                note = "301 寝室 3 月账单。",
+                note = "301 寝室 9 月水费。",
                 scopeSubgroup = true,
                 totalSplitFen = 12_000L,
-            ),
-            DemoActivitySpec(
-                title = "作业清单",
-                type = com.classrecord.app.data.entity.ActivityType.CHECKLIST,
-                note = "第三周实验报告。",
             ),
         ),
         ledgerIncomeTitle = "班费补充",

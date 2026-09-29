@@ -4,6 +4,7 @@ import androidx.room.withTransaction
 import com.classrecord.app.data.db.AppDatabase
 import com.classrecord.app.data.entity.ActivityType
 import com.classrecord.app.data.entity.LedgerType
+import com.classrecord.app.data.entity.MemberStatus
 import com.classrecord.app.data.entity.ScopeType
 import com.classrecord.app.data.repo.ActivityRepository
 import com.classrecord.app.data.repo.ClassRepository
@@ -55,8 +56,8 @@ class DemoDataSeeder(
                     deadline = null,
                     splitPlan = null,
                 )
+                val rows = db.activityMemberDao().getForActivity(activityId)
                 if (spec.paidCount != null && spec.type == ActivityType.PAYMENT) {
-                    val rows = db.activityMemberDao().getForActivity(activityId)
                     rows.take(spec.paidCount).forEach { row ->
                         activityRepository.updateAmounts(
                             row = row,
@@ -65,6 +66,13 @@ class DemoDataSeeder(
                             note = row.note,
                             markPaid = true,
                         )
+                    }
+                }
+                if (spec.doneCount != null &&
+                    (spec.type == ActivityType.ATTENDANCE || spec.type == ActivityType.CHECKLIST)
+                ) {
+                    rows.take(spec.doneCount).forEach { row ->
+                        activityRepository.setStatus(row, MemberStatus.DONE)
                     }
                 }
             }

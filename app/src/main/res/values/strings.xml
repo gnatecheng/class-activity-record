@@ -326,6 +326,9 @@
     <string name="copy_all_done">【%1$s】%2$s已全部完成，谢谢。</string>
     <string name="copy_reminder_header">【催缴】%1$s</string>
     <string name="copy_please_verb">还请尽快%1$s，谢谢。</string>
+    <string name="copy_please_attendance">还请尽快到场，谢谢。</string>
+    <string name="copy_please_payment">还请尽快缴费，谢谢。</string>
+    <string name="copy_please_checklist">还请尽快完成，谢谢。</string>
     <string name="copy_unfinished_count">未完成 %1$d 人</string>
     <string name="copy_unfinished_with_total">，合计 %1$s</string>
     <string name="copy_unfinished_list_title">%1$s 未完成名单</string>

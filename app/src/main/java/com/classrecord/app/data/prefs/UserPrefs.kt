@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.flow.first
 import com.classrecord.app.i18n.AppLanguage
 import com.classrecord.app.i18n.LocaleApplier
 import kotlinx.coroutines.flow.Flow
@@ -60,11 +61,35 @@ class UserPrefs(context: Context) {
         LocaleApplier.apply(language)
     }
 
+    /**
+     * One-time upgrade path for 1.5.0: apply the stored DataStore language (or legacy
+     * boot SharedPreferences) through AppCompat application locales before any Activity.
+     */
+    suspend fun migrateAndApplyStoredLanguage() {
+        val snapshot = dataStore.data.first()
+        val migrated = snapshot[KEY_APP_LOCALE_MIGRATED] ?: false
+        var language = AppLanguage.fromStorage(snapshot[KEY_APP_LANGUAGE])
+        if (!migrated) {
+            if (language == AppLanguage.SYSTEM) {
+                LocaleApplier.readBootLanguage(appContext)?.let { boot ->
+                    if (boot != AppLanguage.SYSTEM) language = boot
+                }
+            }
+            dataStore.edit {
+                it[KEY_APP_LANGUAGE] = language.name
+                it[KEY_APP_LOCALE_MIGRATED] = true
+            }
+        }
+        LocaleApplier.apply(language)
+        LocaleApplier.persistForBoot(appContext, language)
+    }
+
     private val appContext = context.applicationContext
 
     companion object {
         private val KEY_SORT_STUDENT_NO = booleanPreferencesKey("sort_by_student_no")
         private val KEY_THEME_MODE = stringPreferencesKey("theme_mode")
         private val KEY_APP_LANGUAGE = stringPreferencesKey("app_language")
+        private val KEY_APP_LOCALE_MIGRATED = booleanPreferencesKey("app_locale_migrated_v151")
     }
 }

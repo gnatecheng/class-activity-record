@@ -50,6 +50,10 @@ import com.classrecord.app.BuildConfig
 import com.classrecord.app.R
 import com.classrecord.app.i18n.AppLanguage
 import com.classrecord.app.i18n.DateFormats
+import com.classrecord.app.i18n.LocaleApplier
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -82,7 +86,13 @@ class SettingsViewModel(
 ) : ViewModel() {
     val sortByStudentNo = userPrefs.sortByStudentNo
     val themeMode = userPrefs.themeMode
-    val appLanguage = userPrefs.appLanguage
+
+    private val _appliedLanguage = MutableStateFlow(LocaleApplier.readAppliedLanguage())
+    val appliedLanguage: StateFlow<AppLanguage> = _appliedLanguage.asStateFlow()
+
+    init {
+        viewModelScope.launch { refreshAppliedLanguage() }
+    }
 
     fun setSortByStudentNo(value: Boolean) {
         viewModelScope.launch { userPrefs.setSortByStudentNo(value) }
@@ -93,7 +103,18 @@ class SettingsViewModel(
     }
 
     fun setAppLanguage(language: AppLanguage) {
-        viewModelScope.launch { userPrefs.setAppLanguage(language) }
+        viewModelScope.launch {
+            userPrefs.setAppLanguage(language)
+            refreshAppliedLanguage()
+        }
+    }
+
+    private suspend fun refreshAppliedLanguage() {
+        val stored = userPrefs.appLanguage.first()
+        if (LocaleApplier.readAppliedLanguage() != stored) {
+            LocaleApplier.apply(stored)
+        }
+        _appliedLanguage.value = LocaleApplier.readAppliedLanguage()
     }
 
     suspend fun backupTo(uri: Uri) = backupRepository.writeZipTo(uri)
@@ -151,7 +172,7 @@ fun SettingsScreen(onBack: () -> Unit) {
     val vm: SettingsViewModel = viewModel(factory = AppViewModelFactory(app.container))
     val sortByNo by vm.sortByStudentNo.collectAsStateWithLifecycle(initialValue = true)
     val themeMode by vm.themeMode.collectAsStateWithLifecycle(initialValue = ThemeMode.SYSTEM)
-    val appLanguage by vm.appLanguage.collectAsStateWithLifecycle(initialValue = AppLanguage.SYSTEM)
+    val appLanguage by vm.appliedLanguage.collectAsStateWithLifecycle(initialValue = AppLanguage.SYSTEM)
     val uriHandler = LocalUriHandler.current
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()

@@ -895,10 +895,12 @@ private fun buildSupport(type: ActivityType, row: ActivityMemberRow): String {
             R.string.amount_due_short,
             row.member.amountDue?.let { Money.formatDisplay(LocalContext.current, it) } ?: dash
         )
-        bits += stringResource(
-            R.string.amount_paid_short,
-            row.member.amountPaid?.let { Money.formatDisplay(LocalContext.current, it) } ?: dash
-        )
+        row.member.amountPaid?.takeIf { it > 0L }?.let { paid ->
+            bits += stringResource(
+                R.string.amount_paid_short,
+                Money.formatDisplay(LocalContext.current, paid),
+            )
+        }
     }
     row.member.note?.let { bits += it }
     return bits.joinToString(" · ")
