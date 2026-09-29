@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.classrecord.app.data.prefs.UserPrefs
 import com.classrecord.app.i18n.AppLanguage
 import com.classrecord.app.i18n.LocaleApplier
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -30,6 +31,36 @@ class AppLanguageMigrationTest {
             scenario.moveToState(Lifecycle.State.RESUMED)
         }
         assertEquals(AppLanguage.ZH, LocaleApplier.readAppliedLanguage(context))
+    }
+
+    @Test
+    fun frameworkChineseSyncsStoredFromFollowSystemWithoutApply() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        LocaleApplier.apply(context, AppLanguage.ZH, allowClearToSystem = true)
+        val prefs = (context.applicationContext as ClassRecordApp).container.userPrefs
+        prefs.configureLocaleStateForTests(
+            language = AppLanguage.SYSTEM,
+            migrated = true,
+            pending = null,
+        )
+        assertEquals(AppLanguage.ZH, prefs.syncStoredLanguageFromFramework())
+        assertEquals(AppLanguage.ZH, prefs.appLanguage.first())
+        assertEquals(AppLanguage.ZH, LocaleApplier.readAppliedLanguage(context))
+    }
+
+    @Test
+    fun frameworkEnglishSyncsOverStoredChineseWithoutApply() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        LocaleApplier.apply(context, AppLanguage.EN, allowClearToSystem = true)
+        val prefs = (context.applicationContext as ClassRecordApp).container.userPrefs
+        prefs.configureLocaleStateForTests(
+            language = AppLanguage.ZH,
+            migrated = true,
+            pending = null,
+        )
+        assertEquals(AppLanguage.EN, prefs.syncStoredLanguageFromFramework())
+        assertEquals(AppLanguage.EN, prefs.appLanguage.first())
+        assertEquals(AppLanguage.EN, LocaleApplier.readAppliedLanguage(context))
     }
 
     @Test

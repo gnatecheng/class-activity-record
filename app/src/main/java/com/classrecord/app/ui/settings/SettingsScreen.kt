@@ -3,6 +3,7 @@ package com.classrecord.app.ui.settings
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -110,12 +111,14 @@ class SettingsViewModel(
     }
 
     private suspend fun refreshAppliedLanguage() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // Read-only sync for chips; never push DataStore back to LocaleManager here.
+            _appliedLanguage.value = userPrefs.syncStoredLanguageFromFramework()
+            return
+        }
         val stored = userPrefs.appLanguage.first()
         when (stored) {
-            AppLanguage.SYSTEM -> {
-                // Follow system: never push empty locales (preserves OS per-app language).
-                _appliedLanguage.value = AppLanguage.SYSTEM
-            }
+            AppLanguage.SYSTEM -> _appliedLanguage.value = AppLanguage.SYSTEM
             else -> {
                 if (LocaleApplier.readAppliedLanguage(appContext) != stored) {
                     LocaleApplier.apply(appContext, stored, allowClearToSystem = false)

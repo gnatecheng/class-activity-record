@@ -47,6 +47,7 @@ class MainActivity : AppCompatActivity() {
         val app = application as ClassRecordApp
         runBlocking {
             app.container.userPrefs.applyPendingLocaleIfNeeded(this@MainActivity)
+            app.container.userPrefs.syncStoredLanguageFromFramework()
         }
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -74,6 +75,14 @@ class MainActivity : AppCompatActivity() {
             ClassRecordTheme(darkTheme = darkTheme) {
                 ClassRecordRoot()
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val app = application as ClassRecordApp
+        runBlocking {
+            app.container.userPrefs.syncStoredLanguageFromFramework()
         }
     }
 }

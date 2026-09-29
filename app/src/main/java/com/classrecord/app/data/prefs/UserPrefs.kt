@@ -106,6 +106,26 @@ class UserPrefs(context: Context) {
         }
     }
 
+    /**
+     * On API 33+, OS per-app locales are authoritative: mirror them into DataStore without
+     * calling [LocaleApplier.apply]. No-op on older API levels (stored choice remains authority).
+     */
+    suspend fun syncStoredLanguageFromFramework(): AppLanguage {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return appLanguage.first()
+        }
+        val framework = LocaleApplier.readAppliedLanguage(appContext)
+        val stored = appLanguage.first()
+        if (framework != stored) {
+            dataStore.edit {
+                it[KEY_APP_LANGUAGE] = framework.name
+                it.remove(KEY_PENDING_LOCALE_APPLY)
+            }
+            LocaleApplier.persistForBoot(appContext, framework)
+        }
+        return framework
+    }
+
     /** Call from MainActivity before setContent on API 33+. */
     suspend fun applyPendingLocaleIfNeeded(activityContext: Context): Boolean {
         val snapshot = dataStore.data.first()

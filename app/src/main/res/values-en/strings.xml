@@ -41,7 +41,7 @@
     <string name="theme_dark">Dark</string>
     <string name="settings_sort_title">Member list order</string>
     <string name="settings_sort_by_no">Sort by student ID</string>
-    <string name="settings_sort_desc">Sorted by student ID; members without one are listed last, by name.</string>
+    <string name="settings_sort_desc">Members without a student ID are listed last, by name.</string>
     <string name="settings_backup_title">Backup &amp; restore</string>
     <string name="settings_backup_desc">Back up as a ZIP (JSON plus payment proof images). Restore replaces all class data on this device.</string>
     <string name="settings_backup_file">group-matters-backup.zip</string>
@@ -234,7 +234,7 @@ Dan, Eve</string>
     <string name="msg_unarchived">Unarchived</string>
     <string name="msg_archive_failed">Couldn\'t update archive</string>
     <string name="total_prefix">Total %1$s</string>
-    <string name="progress_prefix">Progress: %1$d of %2$d done</string>
+    <string name="progress_prefix">Progress: %1$d of %2$d checked in</string>
     <string name="progress_paid">%1$d / %2$d paid</string>
     <string name="onboarding_load_sample">Explore with sample class</string>
     <string name="demo_seed_unavailable">Sample class can\'t be loaded while you already have class data.</string>
