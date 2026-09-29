@@ -61,7 +61,9 @@ import com.classrecord.app.data.repo.SubGroupRepository
 import com.classrecord.app.data.repo.SubGroupWithMembers
 import com.classrecord.app.di.AppViewModelFactory
 import com.classrecord.app.ui.components.label
-import com.classrecord.app.ui.home.formatDate
+import com.classrecord.app.R
+import com.classrecord.app.i18n.DateFormats
+import androidx.compose.ui.res.stringResource
 import com.classrecord.app.ui.theme.appColors
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -94,7 +96,8 @@ data class WizardReady(
 class ActivityWizardViewModel(
     memberRepository: MemberRepository,
     private val subGroupRepository: SubGroupRepository,
-    private val activityRepository: ActivityRepository
+    private val activityRepository: ActivityRepository,
+    private val appStrings: com.classrecord.app.i18n.AppStrings
 ) : ViewModel() {
     private val _state = MutableStateFlow(WizardState())
     val state: StateFlow<WizardState> = _state.asStateFlow()
@@ -137,10 +140,10 @@ class ActivityWizardViewModel(
         val type = requireNotNull(s.type)
         val scope = requireNotNull(s.scopeType)
         val payment = if (type == ActivityType.PAYMENT) {
-            Money.parseYuanToFen(s.paymentYuan) ?: error("请填写有效的每人应缴金额")
+            Money.parseYuanToFen(s.paymentYuan) ?: error(appStrings.errInvalidPerPerson())
         } else null
         val split = if (type == ActivityType.SPLIT) {
-            Money.parseYuanToFen(s.splitYuan) ?: error("请填写有效的分摊总额")
+            Money.parseYuanToFen(s.splitYuan) ?: error(appStrings.errInvalidSplitTotal())
         } else null
         val plan = if (type == ActivityType.SPLIT) s.splitRows.map { it.toShare() } else null
         return activityRepository.create(
@@ -164,7 +167,8 @@ class ActivityWizardViewModel(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ActivityWizardScreen(onCancel: () -> Unit, onCreated: (Long) -> Unit) {
-    val app = LocalContext.current.applicationContext as ClassRecordApp
+    val context = LocalContext.current
+    val app = context.applicationContext as ClassRecordApp
     val vm: ActivityWizardViewModel = viewModel(factory = AppViewModelFactory(app.container))
     val state by vm.state.collectAsStateWithLifecycle()
     val ready by vm.ready.collectAsStateWithLifecycle()
@@ -175,10 +179,10 @@ fun ActivityWizardScreen(onCancel: () -> Unit, onCreated: (Long) -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("新建事务") },
+                title = { Text(stringResource(R.string.wizard_title)) },
                 navigationIcon = {
                     IconButton(onClick = onCancel) {
-                        Icon(Icons.Outlined.Close, contentDescription = "取消")
+                        Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.action_cancel))
                     }
                 }
             )
@@ -201,9 +205,9 @@ fun ActivityWizardScreen(onCancel: () -> Unit, onCreated: (Long) -> Unit) {
             Spacer(Modifier.height(8.dp))
             Text(
                 when (state.step) {
-                    0 -> "1 / 3  选择范围"
-                    1 -> "2 / 3  选择类型"
-                    else -> "3 / 3  填写内容"
+                    0 -> stringResource(R.string.wizard_step_pick_scope)
+                    1 -> stringResource(R.string.wizard_step_pick_type)
+                    else -> stringResource(R.string.wizard_step_fill_details)
                 },
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary
@@ -239,9 +243,9 @@ fun ActivityWizardScreen(onCancel: () -> Unit, onCreated: (Long) -> Unit) {
             Spacer(Modifier.weight(1f))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 if (state.step == 0) {
-                    TextButton(onClick = onCancel) { Text("取消") }
+                    TextButton(onClick = onCancel) { Text(stringResource(R.string.action_cancel)) }
                 } else {
-                    TextButton(onClick = { vm.back() }) { Text("上一步") }
+                    TextButton(onClick = { vm.back() }) { Text(stringResource(R.string.action_back_step)) }
                 }
                 val canNext = when (state.step) {
                     0 -> (state.scopeType == ScopeType.CLASS && ready.activeMemberCount > 0) ||
@@ -257,13 +261,17 @@ fun ActivityWizardScreen(onCancel: () -> Unit, onCreated: (Long) -> Unit) {
                             scope.launch {
                                 runCatching { vm.create() }
                                     .onSuccess { onCreated(it) }
-                                    .onFailure { snackbar.showSnackbar(it.message ?: "创建失败") }
+                                    .onFailure { snackbar.showSnackbar(it.message ?: context.getString(R.string.err_create_failed)) }
                             }
                         }
                     },
                     enabled = canNext
                 ) {
-                    Text(if (state.step < 2) "下一步" else "创建")
+                    Text(
+                        stringResource(
+                            if (state.step < 2) R.string.action_next else R.string.action_create
+                        )
+                    )
                 }
             }
             Spacer(Modifier.height(12.dp))
@@ -278,10 +286,10 @@ fun ActivityWizardScreen(onCancel: () -> Unit, onCreated: (Long) -> Unit) {
                 TextButton(onClick = {
                     vm.update { it.copy(deadline = picker.selectedDateMillis) }
                     showDate = false
-                }) { Text("确定") }
+                }) { Text(stringResource(R.string.action_ok)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDate = false }) { Text("取消") }
+                TextButton(onClick = { showDate = false }) { Text(stringResource(R.string.action_cancel)) }
             }
         ) {
             DatePicker(state = picker)
@@ -321,7 +329,7 @@ private fun ScopeStep(
     onGroup: (Long) -> Unit
 ) {
     Column(Modifier.verticalScroll(rememberScrollState())) {
-        Text("事务将按当前名单生成快照，之后增删成员不会改历史记录。", style = MaterialTheme.typography.bodyMedium)
+        Text(stringResource(R.string.wizard_step_scope), style = MaterialTheme.typography.bodyMedium)
         Spacer(Modifier.height(12.dp))
         val classEnabled = ready.activeMemberCount > 0
         val classTint = MaterialTheme.appColors.classScope
@@ -344,9 +352,13 @@ private fun ScopeStep(
                     enabled = classEnabled
                 )
                 Column {
-                    Text("全班", color = classTint.color)
+                    Text(stringResource(R.string.wizard_whole_class), color = classTint.color)
                     Text(
-                        if (classEnabled) "当前 ${ready.activeMemberCount} 名在班同学" else "请先添加成员",
+                        if (classEnabled) {
+                            stringResource(R.string.wizard_class_members, ready.activeMemberCount)
+                        } else {
+                            stringResource(R.string.wizard_add_members_first)
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -354,11 +366,11 @@ private fun ScopeStep(
             }
         }
         Spacer(Modifier.height(12.dp))
-        Text("小团体", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.appColors.groupScope.color)
+        Text(stringResource(R.string.wizard_subgroups), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.appColors.groupScope.color)
         val selectable = ready.groups.filter { it.memberIds.isNotEmpty() }
         val emptyGroups = ready.groups.filter { it.memberIds.isEmpty() }
         if (selectable.isEmpty() && emptyGroups.isEmpty()) {
-            Text("还没有可用的小团体。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.wizard_no_subgroups), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         val groupTint = MaterialTheme.appColors.groupScope
         selectable.forEach { group ->
@@ -382,7 +394,7 @@ private fun ScopeStep(
                     Column {
                         Text(group.group.name, color = groupTint.color)
                         Text(
-                            "${group.memberIds.size} 人",
+                            stringResource(R.string.count_people, group.memberIds.size),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -393,7 +405,7 @@ private fun ScopeStep(
         }
         emptyGroups.forEach { group ->
             Text(
-                "${group.group.name}（空，不能作为范围）",
+                stringResource(R.string.wizard_group_empty_scope, group.group.name),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.appColors.onWarning,
                 modifier = Modifier.padding(start = 16.dp, top = 4.dp)
@@ -405,10 +417,10 @@ private fun ScopeStep(
 @Composable
 private fun TypeStep(selected: ActivityType?, onSelect: (ActivityType) -> Unit) {
     Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        TypeCard(ActivityType.ATTENDANCE, "未到 / 已到 / 请假。点按切换到场，长按请假。", selected, onSelect)
-        TypeCard(ActivityType.PAYMENT, "每人一笔应缴。可标记已缴/未缴，金额以元显示、分存储。", selected, onSelect)
-        TypeCard(ActivityType.SPLIT, "填写总额，按当前范围内人数均分到分，余数分给前几人。", selected, onSelect)
-        TypeCard(ActivityType.CHECKLIST, "简单完成勾选，适合作业、任务。", selected, onSelect)
+        TypeCard(ActivityType.ATTENDANCE, stringResource(R.string.wizard_type_attendance_desc), selected, onSelect)
+        TypeCard(ActivityType.PAYMENT, stringResource(R.string.wizard_type_payment_desc), selected, onSelect)
+        TypeCard(ActivityType.SPLIT, stringResource(R.string.wizard_type_split_desc), selected, onSelect)
+        TypeCard(ActivityType.CHECKLIST, stringResource(R.string.wizard_type_checklist_desc), selected, onSelect)
     }
 }
 
@@ -460,15 +472,15 @@ private fun DetailsStep(
             value = state.title,
             onValueChange = onTitle,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("标题") },
+            label = { Text(stringResource(R.string.wizard_title_label)) },
             placeholder = {
                 Text(
                     when (state.type) {
-                        ActivityType.ATTENDANCE -> "例如：周一早读出勤"
-                        ActivityType.PAYMENT -> "例如：秋游费用"
-                        ActivityType.SPLIT -> "例如：班费聚餐"
-                        ActivityType.CHECKLIST -> "例如：值日检查"
-                        null -> "标题"
+                        ActivityType.ATTENDANCE -> stringResource(R.string.wizard_title_attendance)
+                        ActivityType.PAYMENT -> stringResource(R.string.wizard_title_payment)
+                        ActivityType.SPLIT -> stringResource(R.string.wizard_title_split)
+                        ActivityType.CHECKLIST -> stringResource(R.string.wizard_title_checklist)
+                        null -> stringResource(R.string.wizard_title_label)
                     }
                 )
             },
@@ -476,13 +488,13 @@ private fun DetailsStep(
         )
         state.type?.let { type ->
             Spacer(Modifier.height(8.dp))
-            Text("快捷模板", style = MaterialTheme.typography.labelMedium)
+            Text(stringResource(R.string.wizard_templates), style = MaterialTheme.typography.labelMedium)
             Spacer(Modifier.height(4.dp))
             Row(
                 modifier = Modifier.horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                com.classrecord.app.data.ActivityTemplates.titles(type).forEach { preset ->
+                com.classrecord.app.data.ActivityTemplates.titles(type, LocalContext.current).forEach { preset ->
                     FilterChip(
                         selected = state.title == preset,
                         onClick = { onTitle(preset) },
@@ -496,15 +508,22 @@ private fun DetailsStep(
             value = state.note,
             onValueChange = onNote,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("备注（可选）") }
+            label = { Text(stringResource(R.string.member_note)) }
         )
         Spacer(Modifier.height(12.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             OutlinedButton(onClick = onPickDate) {
-                Text(state.deadline?.let { "截止 ${formatDate(it)}" } ?: "设置截止日期（可选）")
+                Text(
+                    state.deadline?.let {
+                        stringResource(
+                            R.string.deadline_prefix,
+                            DateFormats.formatDate(LocalContext.current, it)
+                        )
+                    } ?: stringResource(R.string.wizard_deadline_set)
+                )
             }
             if (state.deadline != null) {
-                TextButton(onClick = onClearDate) { Text("清除") }
+                TextButton(onClick = onClearDate) { Text(stringResource(R.string.wizard_deadline_clear)) }
             }
         }
         when (state.type) {
@@ -514,10 +533,10 @@ private fun DetailsStep(
                     value = state.paymentYuan,
                     onValueChange = onPayment,
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("每人应缴（元）") },
-                    placeholder = { Text("例如 50 或 12.50") },
+                    label = { Text(stringResource(R.string.wizard_per_person)) },
+                    placeholder = { Text(stringResource(R.string.wizard_per_person_hint)) },
                     singleLine = true,
-                    supportingText = { Text("将写入每位同学的应缴金额，内部以分存储。") }
+                    supportingText = { Text(stringResource(R.string.wizard_per_person_support)) }
                 )
             }
             ActivityType.SPLIT -> {
@@ -526,11 +545,11 @@ private fun DetailsStep(
                     value = state.splitYuan,
                     onValueChange = onSplit,
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("分摊总额（元）") },
-                    placeholder = { Text("例如 100") },
+                    label = { Text(stringResource(R.string.split_edit_total)) },
+                    placeholder = { Text(stringResource(R.string.wizard_split_total_hint)) },
                     singleLine = true,
                     supportingText = {
-                        Text("当前范围 $memberCount 人。可排除部分同学，或按权重 / 固定金额分摊。")
+                        Text(stringResource(R.string.wizard_split_scope, memberCount))
                     }
                 )
                 Spacer(Modifier.height(12.dp))

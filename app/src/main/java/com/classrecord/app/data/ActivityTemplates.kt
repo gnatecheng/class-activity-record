@@ -1,34 +1,34 @@
 package com.classrecord.app.data
 
+import android.content.Context
+import com.classrecord.app.R
 import com.classrecord.app.data.entity.ActivityType
+import com.classrecord.app.i18n.DateFormats
 import java.time.Instant
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 object ActivityTemplates {
-    private val dayFmt = DateTimeFormatter.ofPattern("M月d日")
-
-    fun titles(type: ActivityType, nowMillis: Long = System.currentTimeMillis()): List<String> {
+    fun titles(type: ActivityType, context: Context, nowMillis: Long = System.currentTimeMillis()): List<String> {
         val local = Instant.ofEpochMilli(nowMillis).atZone(ZoneId.systemDefault()).toLocalDate()
-        val day = local.format(dayFmt)
-        val month = "${local.monthValue}月"
+        val day = DateFormats.formatDay(context, nowMillis)
+        val month = local.monthValue
         return when (type) {
             ActivityType.ATTENDANCE -> listOf(
-                "今日点名（$day）",
-                "早读出勤（$day）",
-                "晚自习点名（$day）"
+                context.getString(R.string.template_attendance_today, day),
+                context.getString(R.string.template_attendance_morning, day),
+                context.getString(R.string.template_attendance_evening, day)
             )
             ActivityType.PAYMENT -> listOf(
-                "班费（$month）",
-                "活动缴费（$day）"
+                context.getString(R.string.template_payment_class, month),
+                context.getString(R.string.template_payment_event, day)
             )
             ActivityType.SPLIT -> listOf(
-                "寝室水电分摊",
-                "聚餐分摊（$day）"
+                context.getString(R.string.template_split_dorm),
+                context.getString(R.string.template_split_meal, day)
             )
             ActivityType.CHECKLIST -> listOf(
-                "作业提交（$day）",
-                "值日检查（$day）"
+                context.getString(R.string.template_checklist_homework, day),
+                context.getString(R.string.template_checklist_duty, day)
             )
         }
     }

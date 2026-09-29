@@ -17,10 +17,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.classrecord.app.R
 import com.classrecord.app.data.entity.ActivityType
 import com.classrecord.app.data.entity.MemberStatus
 import com.classrecord.app.data.entity.ScopeType
@@ -57,35 +60,41 @@ fun EmptyState(
     }
 }
 
+@Composable
+@ReadOnlyComposable
 fun ActivityType.label(): String = when (this) {
-    ActivityType.ATTENDANCE -> "出勤"
-    ActivityType.PAYMENT -> "缴费"
-    ActivityType.SPLIT -> "费用分摊"
-    ActivityType.CHECKLIST -> "清单"
+    ActivityType.ATTENDANCE -> stringResource(R.string.type_attendance)
+    ActivityType.PAYMENT -> stringResource(R.string.type_payment)
+    ActivityType.SPLIT -> stringResource(R.string.type_split)
+    ActivityType.CHECKLIST -> stringResource(R.string.type_checklist)
 }
 
+@Composable
+@ReadOnlyComposable
 fun MemberStatus.label(type: ActivityType): String = when (type) {
     ActivityType.ATTENDANCE -> when (this) {
-        MemberStatus.PENDING -> "未到"
-        MemberStatus.DONE -> "已到"
-        MemberStatus.EXCUSED -> "请假"
+        MemberStatus.PENDING -> stringResource(R.string.status_pending_attendance)
+        MemberStatus.DONE -> stringResource(R.string.status_done_attendance)
+        MemberStatus.EXCUSED -> stringResource(R.string.status_excused)
     }
     ActivityType.PAYMENT, ActivityType.SPLIT -> when (this) {
-        MemberStatus.DONE -> "已缴"
-        else -> "未缴"
+        MemberStatus.DONE -> stringResource(R.string.status_paid)
+        else -> stringResource(R.string.status_unpaid)
     }
     ActivityType.CHECKLIST -> when (this) {
-        MemberStatus.DONE -> "已完成"
-        else -> "未完成"
+        MemberStatus.DONE -> stringResource(R.string.status_done_checklist)
+        else -> stringResource(R.string.status_pending_checklist)
     }
 }
 
+@Composable
+@ReadOnlyComposable
 fun unfinishedHint(type: ActivityType, count: Int): String {
-    if (count <= 0) return "已完成"
+    if (count <= 0) return stringResource(R.string.hint_all_done)
     return when (type) {
-        ActivityType.ATTENDANCE -> "${count}人未到"
-        ActivityType.PAYMENT, ActivityType.SPLIT -> "${count}人未缴"
-        ActivityType.CHECKLIST -> "${count}项未完成"
+        ActivityType.ATTENDANCE -> stringResource(R.string.hint_attendance_unfinished, count)
+        ActivityType.PAYMENT, ActivityType.SPLIT -> stringResource(R.string.hint_payment_unfinished, count)
+        ActivityType.CHECKLIST -> stringResource(R.string.hint_checklist_unfinished, count)
     }
 }
 

@@ -19,6 +19,7 @@ import com.classrecord.app.data.entity.MemberStatus
 import com.classrecord.app.data.entity.ScopeType
 import com.classrecord.app.data.entity.SubGroup
 import com.classrecord.app.data.entity.SubGroupMember
+import com.classrecord.app.i18n.AppStrings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -230,7 +231,10 @@ class SubGroupRepository(private val db: AppDatabase) {
     }
 }
 
-class ActivityRepository(private val db: AppDatabase) {
+class ActivityRepository(
+    private val db: AppDatabase,
+    private val strings: AppStrings
+) {
     private val activityDao = db.activityDao()
     private val rowDao = db.activityMemberDao()
     private val memberDao = db.memberDao()
@@ -304,7 +308,7 @@ class ActivityRepository(private val db: AppDatabase) {
                     val member = memberMap[row.memberId]
                     ActivityMemberRow(
                         member = row,
-                        name = member?.name ?: "已删除成员",
+                        name = member?.name ?: strings.deletedMember(),
                         studentNo = member?.studentNo
                     )
                 }
@@ -328,22 +332,22 @@ class ActivityRepository(private val db: AppDatabase) {
         splitPlan: List<SplitShare>? = null
     ): Long {
         val trimmed = title.trim()
-        require(trimmed.isNotEmpty()) { "请填写标题" }
+        require(trimmed.isNotEmpty()) { strings.errTitleRequired() }
         val members = resolveScopeMembers(scopeType, subGroupId)
-        require(members.isNotEmpty()) { "范围没有可用成员，无法创建事务" }
+        require(members.isNotEmpty()) { strings.errNoScopeMembers() }
 
         val dues: List<Long?> = when (type) {
             ActivityType.PAYMENT -> {
                 val due = perPersonDue ?: 0L
-                require(due >= 0L) { "应缴金额无效" }
+                require(due >= 0L) { strings.errInvalidDue() }
                 members.map { due }
             }
             ActivityType.SPLIT -> {
                 val total = totalAmount ?: 0L
-                require(total >= 0L) { "分摊总额无效" }
+                require(total >= 0L) { strings.errInvalidSplit() }
                 val plan = alignedPlan(members, splitPlan)
                 val includedCount = plan.count { it.included }
-                require(includedCount > 0) { "请至少选择一名参与分摊的同学" }
+                require(includedCount > 0) { strings.errSplitNeedOne() }
                 SplitPlan.amounts(total, plan)
             }
             else -> members.map { null }
@@ -471,16 +475,16 @@ class ActivityRepository(private val db: AppDatabase) {
     }
 
     suspend fun applySplitPlan(activityId: Long, totalFen: Long, shares: List<SplitShare>) {
-        val activity = activityDao.getById(activityId) ?: error("事务不存在")
-        require(activity.type == ActivityType.SPLIT) { "只有分摊事务可以调整份额" }
-        require(totalFen >= 0L) { "分摊总额无效" }
+        val activity = activityDao.getById(activityId) ?: error(strings.errActivityMissing())
+        require(activity.type == ActivityType.SPLIT) { strings.errSplitOnly() }
+        require(totalFen >= 0L) { strings.errInvalidSplit() }
         val rows = rowDao.getForActivity(activityId)
-        require(rows.isNotEmpty()) { "没有成员快照" }
+        require(rows.isNotEmpty()) { strings.errNoMemberRows() }
         val byId = shares.associateBy { it.memberId }
         val plan = rows.map { row ->
             byId[row.memberId] ?: SplitShare(row.memberId, row.included, row.weight)
         }
-        require(plan.any { it.included }) { "请至少选择一名参与分摊的同学" }
+        require(plan.any { it.included }) { strings.errSplitNeedOne() }
         val dues = SplitPlan.amounts(totalFen, plan)
         val now = System.currentTimeMillis()
         db.withTransaction {
@@ -521,7 +525,7 @@ class ActivityRepository(private val db: AppDatabase) {
                 val member = members[row.memberId]
                 ActivityMemberRow(
                     member = row,
-                    name = member?.name ?: "已删除成员",
+                    name = member?.name ?: strings.deletedMember(),
                     studentNo = member?.studentNo
                 )
             }
@@ -559,7 +563,7 @@ class ActivityRepository(private val db: AppDatabase) {
         sourceId: Long,
         title: String
     ): Long {
-        val activity = activityDao.getById(sourceId) ?: error("原事务不存在")
+        val activity = activityDao.getById(sourceId) ?: error(strings.errSourceMissing())
         val oldRows = rowDao.getForActivity(sourceId)
         val perPerson = when (activity.type) {
             ActivityType.PAYMENT -> {
@@ -586,16 +590,13 @@ class ActivityRepository(private val db: AppDatabase) {
     private fun scopeLabel(
         activity: ActivityEntity,
         groupNames: Map<Long, String>
-    ): String {
-        return if (activity.scopeType == ScopeType.CLASS) {
-            "全班"
-        } else {
-            groupNames[activity.subGroupId] ?: "小团体"
-        }
-    }
+    ): String = strings.scopeLabel(activity, groupNames)
 }
 
-class LedgerRepository(private val db: AppDatabase) {
+class LedgerRepository(
+    private val db: AppDatabase,
+    private val strings: AppStrings
+) {
     private val dao = db.ledgerDao()
 
     fun observeAll(): Flow<List<LedgerEntry>> = dao.observeAll()
@@ -613,9 +614,9 @@ class LedgerRepository(private val db: AppDatabase) {
         note: String?,
         relatedActivityId: Long? = null
     ): Long {
-        require(amountFen > 0L) { "金额必须大于 0" }
+        require(amountFen > 0L) { strings.errLedgerAmount() }
         val trimmed = title.trim()
-        require(trimmed.isNotEmpty()) { "请填写摘要" }
+        require(trimmed.isNotEmpty()) { strings.errLedgerSummary() }
         return dao.insert(
             LedgerEntry(
                 type = type,
@@ -630,15 +631,15 @@ class LedgerRepository(private val db: AppDatabase) {
 
     suspend fun recordPaidTotal(detail: ActivityDetail): Long {
         if (dao.incomeCount(detail.activity.id) > 0) {
-            error("该事务已记入班费")
+            error(strings.errAlreadyInLedger())
         }
         val paid = LedgerMath.paidTotalFen(detail.rows.map { it.member.amountPaid })
-        if (paid <= 0L) error("还没有已收金额")
+        if (paid <= 0L) error(strings.errNoPaidYet())
         return add(
             type = LedgerType.INCOME,
             amountFen = paid,
-            title = "${detail.activity.title} 已收合计",
-            note = "来自${detail.scopeLabel}事务",
+            title = strings.ledgerPaidTotalTitle(detail.activity.title),
+            note = strings.ledgerFromActivity(detail.scopeLabel),
             relatedActivityId = detail.activity.id
         )
     }

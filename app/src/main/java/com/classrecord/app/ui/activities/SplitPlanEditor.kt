@@ -23,6 +23,8 @@ import com.classrecord.app.data.Money
 import com.classrecord.app.data.SplitPlan
 import com.classrecord.app.data.SplitShare
 import com.classrecord.app.ui.theme.appColors
+import androidx.compose.ui.res.stringResource
+import com.classrecord.app.R
 
 data class SplitRowUi(
     val memberId: Long,
@@ -67,7 +69,7 @@ fun SplitPlanEditor(
     }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
-            "勾选参与分摊的同学。可改权重，或填写「固定金额」覆盖自动分摊。余数仍精确到分。",
+            stringResource(R.string.split_editor_help),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -87,8 +89,8 @@ fun SplitPlanEditor(
                         Column(Modifier.weight(1f)) {
                             Text(row.name, style = MaterialTheme.typography.titleSmall)
                             val sub = buildList {
-                                row.studentNo?.let { add("学号 $it") }
-                                if (due != null) add("应缴 ${Money.formatYuan(due)}")
+                                row.studentNo?.let { add(stringResource(R.string.student_no_label, it)) }
+                                if (due != null) add(stringResource(R.string.amount_due_short, Money.formatYuan(due)))
                             }.joinToString(" · ")
                             if (sub.isNotEmpty()) {
                                 Text(
@@ -102,7 +104,7 @@ fun SplitPlanEditor(
                                 )
                             }
                         }
-                        Text("参与", style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.split_participate), style = MaterialTheme.typography.labelMedium)
                         Switch(
                             checked = row.included,
                             onCheckedChange = { included ->
@@ -124,7 +126,7 @@ fun SplitPlanEditor(
                                     })
                                 },
                                 modifier = Modifier.widthIn(min = 88.dp).weight(1f),
-                                label = { Text("权重") },
+                                label = { Text(stringResource(R.string.split_weight)) },
                                 singleLine = true
                             )
                             OutlinedTextField(
@@ -135,8 +137,8 @@ fun SplitPlanEditor(
                                     })
                                 },
                                 modifier = Modifier.weight(1.4f),
-                                label = { Text("固定金额（可选）") },
-                                placeholder = { Text("留空则按权重") },
+                                label = { Text(stringResource(R.string.split_fixed)) },
+                                placeholder = { Text(stringResource(R.string.split_fixed_hint)) },
                                 singleLine = true
                             )
                         }

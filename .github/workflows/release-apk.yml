@@ -49,7 +49,7 @@ jobs:
         run: |
           VERSION_NAME="${{ steps.version.outputs.name }}"
           TAG="${GITHUB_REF_NAME}"
-          APK_NAME="class-activity-record-${VERSION_NAME}-${TAG}.apk"
+          APK_NAME="group-matters-${VERSION_NAME}-${TAG}.apk"
           SRC="$(ls app/build/outputs/apk/debug/*.apk | head -n 1)"
           cp "${SRC}" "${APK_NAME}"
           echo "APK_NAME=${APK_NAME}" >> "$GITHUB_ENV"
@@ -58,7 +58,7 @@ jobs:
       - name: Write release notes
         run: |
           {
-            echo "## 班级事务记录 ${{ steps.version.outputs.name }}"
+            echo "## 多人事务 ${{ steps.version.outputs.name }}"
             echo
             echo "调试包（assembleDebug），下载 APK 后直接安装即可。"
             echo
@@ -68,7 +68,7 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: 班级事务记录 ${{ steps.version.outputs.name }}
+          name: 多人事务 ${{ steps.version.outputs.name }}
           body_path: release_body.md
           files: ${{ env.APK_NAME }}
           fail_on_unmatched_files: true

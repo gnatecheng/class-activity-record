@@ -5,10 +5,14 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.core.content.FileProvider
+import com.classrecord.app.i18n.AppStrings
 import java.io.File
 import java.io.FileOutputStream
 
-class AttachmentStore(context: Context) {
+class AttachmentStore(
+    context: Context,
+    private val strings: AppStrings
+) {
     private val appContext = context.applicationContext
     val root: File = File(appContext.filesDir, DIR).also { it.mkdirs() }
 
@@ -37,9 +41,9 @@ class AttachmentStore(context: Context) {
 
     fun saveFromUri(uri: Uri, activityId: Long, memberId: Long): Pair<String, String> {
         val input = appContext.contentResolver.openInputStream(uri)
-            ?: error("无法读取所选图片")
+            ?: error(strings.errReadImage())
         val decoded = input.use { BitmapFactory.decodeStream(it) }
-            ?: error("无法解析图片")
+            ?: error(strings.errParseImage())
         return saveBitmap(decoded, activityId, memberId)
     }
 

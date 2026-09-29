@@ -45,11 +45,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
+import com.classrecord.app.R
 import com.classrecord.app.data.Money
 import com.classrecord.app.data.entity.ClassProfile
 import com.classrecord.app.data.entity.ScopeType
@@ -59,6 +62,7 @@ import com.classrecord.app.data.repo.ClassRepository
 import com.classrecord.app.data.repo.LedgerRepository
 import com.classrecord.app.data.repo.MemberRepository
 import com.classrecord.app.data.repo.SubGroupRepository
+import com.classrecord.app.i18n.DateFormats
 import com.classrecord.app.ui.components.EmptyState
 import com.classrecord.app.ui.components.label
 import com.classrecord.app.ui.components.unfinishedHint
@@ -67,9 +71,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 data class HomeUiState(
     val loaded: Boolean = false,
@@ -121,7 +122,8 @@ fun HomeScreen(
     onSettings: () -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val className = state.classProfile?.name?.ifBlank { "未命名班级" } ?: "未命名班级"
+    val unnamed = stringResource(R.string.unnamed_class)
+    val className = state.classProfile?.name?.ifBlank { unnamed } ?: unnamed
     var menuOpen by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
     var archiveFilter by remember { mutableStateOf(ActivityArchiveFilter.ACTIVE) }
@@ -136,7 +138,7 @@ fun HomeScreen(
                     Column {
                         Text(className, fontWeight = FontWeight.SemiBold)
                         Text(
-                            "在班 ${state.memberCount} 人",
+                            stringResource(R.string.members_in_class, state.memberCount),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -144,14 +146,17 @@ fun HomeScreen(
                 },
                 actions = {
                     IconButton(onClick = onEditClass) {
-                        Icon(Icons.Outlined.Edit, contentDescription = "编辑班级名称")
+                        Icon(
+                            Icons.Outlined.Edit,
+                            contentDescription = stringResource(R.string.cd_edit_class)
+                        )
                     }
                     IconButton(onClick = { menuOpen = true }) {
-                        Icon(Icons.Outlined.MoreVert, contentDescription = "更多")
+                        Icon(Icons.Outlined.MoreVert, contentDescription = stringResource(R.string.cd_more))
                     }
                     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                         DropdownMenuItem(
-                            text = { Text("设置") },
+                            text = { Text(stringResource(R.string.settings_title)) },
                             onClick = {
                                 menuOpen = false
                                 onSettings()
@@ -163,7 +168,7 @@ fun HomeScreen(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onNewActivity) {
-                Text("新建", modifier = Modifier.padding(horizontal = 8.dp))
+                Text(stringResource(R.string.action_new), modifier = Modifier.padding(horizontal = 8.dp))
             }
         }
     ) { padding ->
@@ -178,8 +183,8 @@ fun HomeScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     ShortcutCard(
                         modifier = Modifier.weight(1f),
-                        title = "成员",
-                        subtitle = "${state.memberCount} 人",
+                        title = stringResource(R.string.home_members),
+                        subtitle = stringResource(R.string.count_people, state.memberCount),
                         containerColor = MaterialTheme.appColors.memberShortcut,
                         icon = {
                             Icon(
@@ -192,8 +197,8 @@ fun HomeScreen(
                     )
                     ShortcutCard(
                         modifier = Modifier.weight(1f),
-                        title = "小团体",
-                        subtitle = "${state.subGroupCount} 个",
+                        title = stringResource(R.string.home_subgroups),
+                        subtitle = stringResource(R.string.count_groups, state.subGroupCount),
                         containerColor = MaterialTheme.appColors.groupShortcut,
                         icon = {
                             Icon(
@@ -209,8 +214,11 @@ fun HomeScreen(
             item {
                 ShortcutCard(
                     modifier = Modifier.fillMaxWidth(),
-                    title = "班费账本",
-                    subtitle = "余额 ${Money.formatYuan(state.ledgerBalanceFen)}",
+                    title = stringResource(R.string.home_ledger),
+                    subtitle = stringResource(
+                        R.string.home_ledger_balance,
+                        Money.formatYuan(state.ledgerBalanceFen)
+                    ),
                     containerColor = MaterialTheme.appColors.ledgerShortcut,
                     icon = {
                         Icon(
@@ -225,7 +233,7 @@ fun HomeScreen(
             item {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "事务",
+                    stringResource(R.string.home_activities),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -235,13 +243,13 @@ fun HomeScreen(
                     onValueChange = { query = it },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    label = { Text("搜索事务") },
-                    placeholder = { Text("按标题搜索") },
+                    label = { Text(stringResource(R.string.home_search)) },
+                    placeholder = { Text(stringResource(R.string.home_search_hint)) },
                     leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
                     trailingIcon = {
                         if (query.isNotEmpty()) {
                             IconButton(onClick = { query = "" }) {
-                                Icon(Icons.Outlined.Close, contentDescription = "清除")
+                                Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.cd_clear))
                             }
                         }
                     }
@@ -254,12 +262,12 @@ fun HomeScreen(
                     FilterChip(
                         selected = archiveFilter == ActivityArchiveFilter.ACTIVE,
                         onClick = { archiveFilter = ActivityArchiveFilter.ACTIVE },
-                        label = { Text("进行中") }
+                        label = { Text(stringResource(R.string.filter_active)) }
                     )
                     FilterChip(
                         selected = archiveFilter == ActivityArchiveFilter.ARCHIVED,
                         onClick = { archiveFilter = ActivityArchiveFilter.ARCHIVED },
-                        label = { Text("已归档") }
+                        label = { Text(stringResource(R.string.filter_archived)) }
                     )
                 }
             }
@@ -303,6 +311,7 @@ private fun ShortcutCard(
 
 @Composable
 private fun ActivityCard(item: ActivityListItem, onClick: () -> Unit) {
+    val context = LocalContext.current
     val activity = item.activity
     val typeTint = MaterialTheme.appColors.typeTint(activity.type)
     val scopeTint = MaterialTheme.appColors.scopeTint(activity.scopeType == ScopeType.CLASS)
@@ -331,14 +340,14 @@ private fun ActivityCard(item: ActivityListItem, onClick: () -> Unit) {
                 if (activity.archived) {
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        "已归档",
+                        stringResource(R.string.archived_badge),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 Spacer(Modifier.weight(1f))
                 Text(
-                    formatDay(activity.createdAt),
+                    DateFormats.formatDay(context, activity.createdAt),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -355,6 +364,7 @@ private fun ActivityCard(item: ActivityListItem, onClick: () -> Unit) {
     }
 }
 
+@Composable
 private fun emptyTitle(
     noActivities: Boolean,
     query: String,
@@ -362,13 +372,15 @@ private fun emptyTitle(
 ): String {
     val needle = query.trim()
     return when {
-        noActivities && filter == ActivityArchiveFilter.ACTIVE -> "还没有事务"
-        needle.isNotEmpty() -> "没有匹配的事务"
-        filter == ActivityArchiveFilter.ARCHIVED -> "没有已归档事务"
-        else -> "还没有事务"
+        noActivities && filter == ActivityArchiveFilter.ACTIVE ->
+            stringResource(R.string.empty_no_activities)
+        needle.isNotEmpty() -> stringResource(R.string.empty_no_match)
+        filter == ActivityArchiveFilter.ARCHIVED -> stringResource(R.string.empty_no_archived)
+        else -> stringResource(R.string.empty_no_activities)
     }
 }
 
+@Composable
 private fun emptySubtitle(
     noActivities: Boolean,
     query: String,
@@ -376,20 +388,9 @@ private fun emptySubtitle(
 ): String {
     val needle = query.trim()
     return when {
-        needle.isNotEmpty() -> "试试其他标题，或切换「进行中 / 已归档」。"
-        filter == ActivityArchiveFilter.ARCHIVED -> "在事务详情菜单中可将进行中的事务归档。"
-        noActivities -> "点击右下角「新建」，为全班或小团体记录出勤、缴费、分摊或清单。"
-        else -> "点击右下角「新建」，为全班或小团体记录出勤、缴费、分摊或清单。"
+        needle.isNotEmpty() -> stringResource(R.string.empty_try_other)
+        filter == ActivityArchiveFilter.ARCHIVED -> stringResource(R.string.empty_archive_hint)
+        noActivities -> stringResource(R.string.empty_create_hint)
+        else -> stringResource(R.string.empty_create_hint)
     }
-}
-
-private val dayFmt = DateTimeFormatter.ofPattern("M月d日")
-
-fun formatDay(millis: Long): String {
-    return Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(dayFmt)
-}
-
-fun formatDate(millis: Long): String {
-    val fmt = DateTimeFormatter.ofPattern("yyyy年M月d日")
-    return Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(fmt)
 }

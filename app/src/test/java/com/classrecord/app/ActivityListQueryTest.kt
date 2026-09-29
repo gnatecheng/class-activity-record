@@ -9,7 +9,12 @@ import com.classrecord.app.ui.home.ActivityListQuery
 import com.classrecord.app.widget.UnfinishedWidgetSnapshot
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [26], qualifiers = "zh-rCN")
 class ActivityListQueryTest {
     private val items = listOf(
         item(1, "秋游缴费", archived = false),
@@ -42,10 +47,15 @@ class ActivityListQueryTest {
     }
 }
 
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [26], qualifiers = "zh-rCN")
 class UnfinishedWidgetSnapshotTest {
+    private val context = TestContext.context
+
     @Test
     fun usesRecentActiveActivityCount() {
         val snapshot = UnfinishedWidgetSnapshot.from(
+            context,
             listOf(
                 item(2, "月考出勤", archived = false, unfinished = 3),
                 item(1, "旧事务", archived = false, unfinished = 9),
@@ -60,6 +70,7 @@ class UnfinishedWidgetSnapshotTest {
     @Test
     fun emptyActiveFallsBackToOpenHint() {
         val snapshot = UnfinishedWidgetSnapshot.from(
+            context,
             listOf(item(1, "旧事务", archived = true, unfinished = 4))
         )
         assertEquals(0, snapshot.count)

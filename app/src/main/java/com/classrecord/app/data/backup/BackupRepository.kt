@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.room.withTransaction
 import com.classrecord.app.data.AttachmentStore
+import com.classrecord.app.i18n.AppStrings
 import com.classrecord.app.data.db.AppDatabase
 import com.classrecord.app.data.entity.ActivityEntity
 import com.classrecord.app.data.entity.ActivityMember
@@ -29,26 +30,27 @@ import java.util.zip.ZipOutputStream
 class BackupRepository(
     context: Context,
     private val db: AppDatabase,
-    private val attachments: AttachmentStore
+    private val attachments: AttachmentStore,
+    private val strings: AppStrings
 ) {
     private val appContext = context.applicationContext
 
     suspend fun writeZipTo(uri: Uri) {
         val bytes = buildZipBytes()
         appContext.contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
-            ?: error("无法写入备份文件")
+            ?: error(strings.errWriteBackup())
     }
 
     suspend fun shareableZipFile(): File {
         val dir = File(appContext.cacheDir, "export").also { it.mkdirs() }
-        val file = File(dir, "班级事务记录-备份.zip")
+        val file = File(dir, strings.backupFileName())
         file.writeBytes(buildZipBytes())
         return file
     }
 
     suspend fun restoreFrom(uri: Uri) {
         val bytes = appContext.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-            ?: error("无法读取备份文件")
+            ?: error(strings.errReadBackup())
         restoreBytes(bytes)
     }
 
@@ -195,7 +197,7 @@ class BackupRepository(
         val (jsonText, files) = unpack(bytes)
         val root = JSONObject(jsonText)
         if (root.optString("format") != FORMAT) {
-            error("不是班级事务记录的备份文件")
+            error(strings.errNotBackup())
         }
         db.withTransaction {
             db.ledgerDao().deleteAll()
@@ -337,7 +339,7 @@ class BackupRepository(
                     entry = zip.nextEntry
                 }
             }
-            return (json ?: error("备份包里没有数据文件")) to files
+            return (json ?: error(strings.errNoDataInBackup())) to files
         }
         return bytes.toString(Charsets.UTF_8) to emptyMap()
     }

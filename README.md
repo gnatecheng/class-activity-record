@@ -1,12 +1,12 @@
-# 班级事务记录
+# 多人事务
 
 单班事务记录 Android 应用：出勤、缴费、费用分摊、清单。数据保存在本机（Room），无需登录或联网。
 
-- **应用名称**：班级事务记录
+- **应用名称**：多人事务（英文界面：**Group Matters**）
 - **applicationId**：`com.classrecord.app`
 - **最低系统**：Android 8.0（API 26）
 - **版本**：1.4.0（versionCode 6）
-- **界面语言**：简体中文
+- **界面语言**：简体中文 / English（设置内可切换）
 
 ## 功能
 
@@ -58,6 +58,14 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
 也可把 APK 传到手机后打开安装。桌面小组件在系统桌面小部件列表中名为「未完成人数」。
+
+## GitHub 发布
+
+打 tag（`v*`）或手动运行 **Release APK** 工作流后，Release 附件文件名为：
+
+`group-matters-<versionName>-<tag>.apk`（例如 `group-matters-1.4.0-v1.4.0.apk`）。
+
+下载入口：[Releases](https://github.com/gnatecheng/class-activity-record/releases/latest)（`releases/latest`，不依赖固定文件名）。
 
 ## 技术栈
 

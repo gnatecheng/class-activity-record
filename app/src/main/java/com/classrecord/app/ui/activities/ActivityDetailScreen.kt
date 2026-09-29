@@ -81,8 +81,10 @@ import com.classrecord.app.di.AppViewModelFactory
 import com.classrecord.app.ui.components.ScopeChip
 import com.classrecord.app.ui.components.StatusBadge
 import com.classrecord.app.ui.components.TypeChip
-import com.classrecord.app.ui.home.formatDate
-import com.classrecord.app.ui.home.formatDay
+import com.classrecord.app.R
+import com.classrecord.app.i18n.AppStrings
+import com.classrecord.app.i18n.DateFormats
+import androidx.compose.ui.res.stringResource
 import com.classrecord.app.ui.theme.appColors
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -97,6 +99,7 @@ class ActivityDetailViewModel(
     val attachmentStore: AttachmentStore,
     userPrefs: UserPrefs,
     private val appContext: Context,
+    private val appStrings: AppStrings,
     private val activityId: Long
 ) : ViewModel() {
     private val _onlyUnfinished = MutableStateFlow(true)
@@ -138,23 +141,25 @@ class ActivityDetailViewModel(
         markPaid: Boolean?
     ) {
         val due = dueYuan.trim().takeIf { it.isNotEmpty() }?.let {
-            Money.parseYuanToFen(it) ?: error("应缴金额格式不对")
+            Money.parseYuanToFen(it) ?: error(appStrings.errAmountDueFormat())
         }
         val paid = paidYuan.trim().takeIf { it.isNotEmpty() }?.let {
-            Money.parseYuanToFen(it) ?: error("已缴金额格式不对")
+            Money.parseYuanToFen(it) ?: error(appStrings.errAmountPaidFormat())
         }
         activityRepository.updateAmounts(row.member, due, paid, note, markPaid)
     }
 
     fun defaultReuseTitle(): String {
         val title = detail.value?.activity?.title.orEmpty()
-        return ActivityCopyText.nextPeriodTitle(title, formatDay(System.currentTimeMillis()))
+        val day = DateFormats.formatDay(appContext, System.currentTimeMillis())
+        val english = appContext.resources.configuration.locales[0].language.startsWith("en")
+        return ActivityCopyText.nextPeriodTitle(title, day, english)
     }
 
     suspend fun reuse(title: String): Long = activityRepository.reuse(activityId, title)
 
     suspend fun recordPaidToLedger() {
-        val current = detail.value ?: error("事务不存在")
+        val current = detail.value ?: error(appStrings.errActivityMissing())
         ledgerRepository.recordPaidTotal(current)
     }
 
@@ -175,31 +180,31 @@ class ActivityDetailViewModel(
     }
 
     suspend fun applySplit(totalYuan: String, rows: List<SplitRowUi>) {
-        val total = Money.parseYuanToFen(totalYuan) ?: error("请填写有效总额")
+        val total = Money.parseYuanToFen(totalYuan) ?: error(appStrings.errInvalidTotal())
         activityRepository.applySplitPlan(activityId, total, rows.map { it.toShare() })
     }
 
     suspend fun progressCsvFile(): java.io.File {
-        val current = activityRepository.snapshot(activityId) ?: error("事务不存在")
+        val current = activityRepository.snapshot(activityId) ?: error(appStrings.errActivityMissing())
         val dir = java.io.File(appContext.cacheDir, "export").also { it.mkdirs() }
-        val file = java.io.File(dir, "${current.activity.title}-进度.csv")
-        file.writeBytes(Csv.withBom(Csv.activityProgress(current)))
+        val file = java.io.File(dir, appStrings.exportFilenameProgress(current.activity.title))
+        file.writeBytes(Csv.withBom(Csv.activityProgress(current, appContext, appStrings)))
         return file
     }
 
     suspend fun unfinishedCsvFile(): java.io.File {
-        val current = activityRepository.snapshot(activityId) ?: error("事务不存在")
+        val current = activityRepository.snapshot(activityId) ?: error(appStrings.errActivityMissing())
         val dir = java.io.File(appContext.cacheDir, "export").also { it.mkdirs() }
-        val file = java.io.File(dir, "${current.activity.title}-未完成.csv")
-        file.writeBytes(Csv.withBom(Csv.unfinished(current)))
+        val file = java.io.File(dir, appStrings.exportFilenameUnfinishedCsv(current.activity.title))
+        file.writeBytes(Csv.withBom(Csv.unfinished(current, appContext, appStrings)))
         return file
     }
 
     suspend fun unfinishedTextFile(): java.io.File {
-        val current = activityRepository.snapshot(activityId) ?: error("事务不存在")
+        val current = activityRepository.snapshot(activityId) ?: error(appStrings.errActivityMissing())
         val dir = java.io.File(appContext.cacheDir, "export").also { it.mkdirs() }
-        val file = java.io.File(dir, "${current.activity.title}-未完成.txt")
-        file.writeText(ActivityCopyText.unfinishedPlain(current), Charsets.UTF_8)
+        val file = java.io.File(dir, appStrings.exportFilenameUnfinishedTxt(current.activity.title))
+        file.writeText(ActivityCopyText.unfinishedPlain(current, appContext), Charsets.UTF_8)
         return file
     }
 
@@ -227,6 +232,11 @@ fun ActivityDetailScreen(
     val scope = rememberCoroutineScope()
     val clipboard = LocalClipboardManager.current
     val context = LocalContext.current
+    val appStrings = app.container.appStrings
+    val shareReminderTitle = stringResource(R.string.share_reminder)
+    val shareProgressTitle = stringResource(R.string.share_progress_csv)
+    val shareUnfinishedCsvTitle = stringResource(R.string.share_unfinished_csv)
+    val shareUnfinishedTextTitle = stringResource(R.string.share_unfinished_text)
     var editing by remember { mutableStateOf<ActivityMemberRow?>(null) }
     var menuOpen by remember { mutableStateOf(false) }
     var reuseTitle by remember { mutableStateOf<String?>(null) }
@@ -242,8 +252,8 @@ fun ActivityDetailScreen(
         if (uri != null && row != null) {
             scope.launch {
                 runCatching { vm.saveAttachment(row, uri) }
-                    .onSuccess { snackbar.showSnackbar("已保存凭证") }
-                    .onFailure { snackbar.showSnackbar(it.message ?: "无法保存图片") }
+                    .onSuccess { snackbar.showSnackbar(context.getString(R.string.proof_saved)) }
+                    .onFailure { snackbar.showSnackbar(it.message ?: context.getString(R.string.proof_save_failed)) }
             }
         }
     }
@@ -256,8 +266,8 @@ fun ActivityDetailScreen(
         if (ok && row != null && uri != null) {
             scope.launch {
                 runCatching { vm.saveAttachment(row, uri) }
-                    .onSuccess { snackbar.showSnackbar("已保存凭证") }
-                    .onFailure { snackbar.showSnackbar(it.message ?: "无法保存图片") }
+                    .onSuccess { snackbar.showSnackbar(context.getString(R.string.proof_saved)) }
+                    .onFailure { snackbar.showSnackbar(it.message ?: context.getString(R.string.proof_save_failed)) }
             }
         }
     }
@@ -266,59 +276,59 @@ fun ActivityDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(current?.activity?.title ?: "事务详情") },
+                title = { Text(current?.activity?.title ?: stringResource(R.string.detail_title_fallback)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 },
                 actions = {
                     IconButton(onClick = { menuOpen = true }) {
-                        Icon(Icons.Outlined.MoreVert, contentDescription = "更多")
+                        Icon(Icons.Outlined.MoreVert, contentDescription = stringResource(R.string.cd_more))
                     }
                     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                         DropdownMenuItem(
-                            text = { Text("复制摘要") },
+                            text = { Text(stringResource(R.string.menu_copy_summary)) },
                             onClick = {
                                 menuOpen = false
                                 current?.let {
-                                    clipboard.setText(AnnotatedString(ActivityCopyText.summary(it)))
-                                    scope.launch { snackbar.showSnackbar("已复制") }
+                                    clipboard.setText(AnnotatedString(ActivityCopyText.summary(it, appStrings, context)))
+                                    scope.launch { snackbar.showSnackbar(context.getString(R.string.msg_copied)) }
                                 }
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("复制催缴文案") },
+                            text = { Text(stringResource(R.string.menu_copy_reminder)) },
                             onClick = {
                                 menuOpen = false
                                 current?.let {
-                                    clipboard.setText(AnnotatedString(ActivityCopyText.reminder(it)))
-                                    scope.launch { snackbar.showSnackbar("已复制") }
+                                    clipboard.setText(AnnotatedString(ActivityCopyText.reminder(it, appStrings, context)))
+                                    scope.launch { snackbar.showSnackbar(context.getString(R.string.msg_copied)) }
                                 }
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("分享催缴") },
+                            text = { Text(stringResource(R.string.menu_share_reminder)) },
                             onClick = {
                                 menuOpen = false
                                 current?.let {
                                     val send = Intent(Intent.ACTION_SEND).apply {
                                         type = "text/plain"
-                                        putExtra(Intent.EXTRA_TEXT, ActivityCopyText.reminder(it))
+                                        putExtra(Intent.EXTRA_TEXT, ActivityCopyText.reminder(it, appStrings, context))
                                     }
-                                    context.startActivity(Intent.createChooser(send, "分享催缴文案"))
+                                    context.startActivity(Intent.createChooser(send, shareReminderTitle))
                                 }
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("再开一期") },
+                            text = { Text(stringResource(R.string.reuse_title)) },
                             onClick = {
                                 menuOpen = false
                                 reuseTitle = vm.defaultReuseTitle()
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("导出本事务 CSV") },
+                            text = { Text(stringResource(R.string.menu_export_csv)) },
                             onClick = {
                                 menuOpen = false
                                 scope.launch {
@@ -328,15 +338,15 @@ fun ActivityDetailScreen(
                                                 context,
                                                 it,
                                                 "text/csv",
-                                                "分享进度 CSV"
+                                                shareProgressTitle
                                             )
                                         }
-                                        .onFailure { snackbar.showSnackbar(it.message ?: "无法导出") }
+                                        .onFailure { snackbar.showSnackbar(it.message ?: context.getString(R.string.msg_export_failed)) }
                                 }
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("导出未完成 CSV") },
+                            text = { Text(stringResource(R.string.menu_export_unfinished_csv)) },
                             onClick = {
                                 menuOpen = false
                                 scope.launch {
@@ -346,26 +356,26 @@ fun ActivityDetailScreen(
                                                 context,
                                                 it,
                                                 "text/csv",
-                                                "分享未完成 CSV"
+                                                shareUnfinishedCsvTitle
                                             )
                                         }
-                                        .onFailure { snackbar.showSnackbar(it.message ?: "无法导出") }
+                                        .onFailure { snackbar.showSnackbar(it.message ?: context.getString(R.string.msg_export_failed)) }
                                 }
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("复制未完成名单") },
+                            text = { Text(stringResource(R.string.menu_copy_unfinished)) },
                             onClick = {
                                 menuOpen = false
                                 current?.let {
-                                    clipboard.setText(AnnotatedString(ActivityCopyText.unfinishedPlain(it)))
-                                    scope.launch { snackbar.showSnackbar("已复制未完成名单") }
+                                    clipboard.setText(AnnotatedString(ActivityCopyText.unfinishedPlain(it, context)))
+                                    scope.launch { snackbar.showSnackbar(context.getString(R.string.msg_copied_unfinished)) }
                                 }
                             }
                         )
                         if (current?.activity?.type == ActivityType.SPLIT) {
                             DropdownMenuItem(
-                                text = { Text("调整分摊") },
+                                text = { Text(stringResource(R.string.split_edit_title)) },
                                 onClick = {
                                     menuOpen = false
                                     splitEditor = true
@@ -374,7 +384,15 @@ fun ActivityDetailScreen(
                         }
                         DropdownMenuItem(
                             text = {
-                                Text(if (current?.activity?.archived == true) "取消归档" else "归档")
+                                Text(
+                                    stringResource(
+                                        if (current?.activity?.archived == true) {
+                                            R.string.menu_unarchive
+                                        } else {
+                                            R.string.menu_archive
+                                        }
+                                    )
+                                )
                             },
                             onClick = {
                                 menuOpen = false
@@ -383,10 +401,14 @@ fun ActivityDetailScreen(
                                     runCatching { vm.setArchived(!archived) }
                                         .onSuccess {
                                             snackbar.showSnackbar(
-                                                if (archived) "已取消归档" else "已归档，可在首页筛选查看"
+                                                context.getString(
+                                                    if (archived) R.string.msg_unarchived else R.string.msg_archived
+                                                )
                                             )
                                         }
-                                        .onFailure { snackbar.showSnackbar(it.message ?: "无法更新归档") }
+                                        .onFailure {
+                                            snackbar.showSnackbar(it.message ?: context.getString(R.string.msg_archive_failed))
+                                        }
                                 }
                             }
                         )
@@ -398,7 +420,7 @@ fun ActivityDetailScreen(
     ) { padding ->
         if (current == null) {
             Column(Modifier.padding(padding).padding(24.dp)) {
-                Text("事务不存在或已删除")
+                Text(stringResource(R.string.detail_not_found))
             }
             return@Scaffold
         }
@@ -429,25 +451,31 @@ fun ActivityDetailScreen(
                             AssistChip(
                                 onClick = {},
                                 enabled = false,
-                                label = { Text("已归档") }
+                                label = { Text(stringResource(R.string.archived_badge)) }
                             )
                         }
                     }
                     current.activity.deadline?.let {
-                        Text("截止 ${formatDate(it)}", style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            stringResource(R.string.deadline_prefix, DateFormats.formatDate(context, it)),
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                     current.activity.note?.let {
                         Text(it, style = MaterialTheme.typography.bodyMedium)
                     }
                     if (type == ActivityType.SPLIT && current.activity.totalAmount != null) {
                         Text(
-                            "总额 ${Money.formatYuan(current.activity.totalAmount!!)}",
+                            stringResource(
+                                R.string.total_prefix,
+                                Money.formatYuan(current.activity.totalAmount!!)
+                            ),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "进度 ${current.doneCount}/${current.totalCount}",
+                        stringResource(R.string.progress_prefix, current.doneCount, current.totalCount),
                         style = MaterialTheme.typography.titleMedium,
                         color = if (current.unfinishedCount == 0) {
                             MaterialTheme.appColors.success
@@ -456,9 +484,9 @@ fun ActivityDetailScreen(
                         }
                     )
                     val hint = when (type) {
-                        ActivityType.ATTENDANCE -> "点按切换未到/已到，长按请假"
-                        ActivityType.PAYMENT, ActivityType.SPLIT -> "点按切换已缴/未缴；点编辑可改金额"
-                        ActivityType.CHECKLIST -> "点按切换完成状态"
+                        ActivityType.ATTENDANCE -> stringResource(R.string.hint_tap_attendance)
+                        ActivityType.PAYMENT, ActivityType.SPLIT -> stringResource(R.string.hint_tap_payment)
+                        ActivityType.CHECKLIST -> stringResource(R.string.hint_tap_checklist)
                     }
                     Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(8.dp))
@@ -466,7 +494,7 @@ fun ActivityDetailScreen(
                         FilterChip(
                             selected = onlyUnfinished,
                             onClick = { vm.setOnlyUnfinished(!onlyUnfinished) },
-                            label = { Text("仅未完成") },
+                            label = { Text(stringResource(R.string.filter_unfinished_only)) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = MaterialTheme.appColors.warningContainer,
                                 selectedLabelColor = MaterialTheme.appColors.onWarning
@@ -479,7 +507,7 @@ fun ActivityDetailScreen(
                                     rollCall = !rollCall
                                     rollIndex = 0
                                 },
-                                label = { Text("连续点名") },
+                                label = { Text(stringResource(R.string.roll_call_continuous)) },
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = MaterialTheme.appColors.attendance.container,
                                     selectedLabelColor = MaterialTheme.appColors.attendance.onContainer
@@ -489,37 +517,37 @@ fun ActivityDetailScreen(
                     }
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "催缴与导出可直接发微信群：一人一行，含金额。",
+                        stringResource(R.string.wechat_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.height(8.dp))
                     OutlinedButton(
                         onClick = {
-                            clipboard.setText(AnnotatedString(ActivityCopyText.reminder(current)))
-                            scope.launch { snackbar.showSnackbar("已复制催缴文案") }
+                            clipboard.setText(AnnotatedString(ActivityCopyText.reminder(current, appStrings, context)))
+                            scope.launch { snackbar.showSnackbar(context.getString(R.string.msg_copied_reminder)) }
                         },
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text("复制催缴（微信）") }
+                    ) { Text(stringResource(R.string.copy_wechat_reminder)) }
                     Spacer(Modifier.height(8.dp))
                     OutlinedButton(
                         onClick = {
-                            clipboard.setText(AnnotatedString(ActivityCopyText.unfinishedPlain(current)))
-                            scope.launch { snackbar.showSnackbar("已复制未完成名单") }
+                            clipboard.setText(AnnotatedString(ActivityCopyText.unfinishedPlain(current, context)))
+                            scope.launch { snackbar.showSnackbar(context.getString(R.string.msg_copied_unfinished)) }
                         },
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text("复制未完成名单") }
+                    ) { Text(stringResource(R.string.menu_copy_unfinished)) }
                     Spacer(Modifier.height(8.dp))
                     OutlinedButton(
                         onClick = {
                             val send = Intent(Intent.ACTION_SEND).apply {
                                 setType("text/plain")
-                                putExtra(Intent.EXTRA_TEXT, ActivityCopyText.reminder(current))
+                                putExtra(Intent.EXTRA_TEXT, ActivityCopyText.reminder(current, appStrings, context))
                             }
-                            context.startActivity(Intent.createChooser(send, "分享催缴文案"))
+                            context.startActivity(Intent.createChooser(send, shareReminderTitle))
                         },
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text("分享催缴") }
+                    ) { Text(stringResource(R.string.menu_share_reminder)) }
                     Spacer(Modifier.height(8.dp))
                     OutlinedButton(
                         onClick = {
@@ -530,27 +558,31 @@ fun ActivityDetailScreen(
                                             context,
                                             it,
                                             "text/plain",
-                                            "分享未完成名单"
+                                            shareUnfinishedTextTitle
                                         )
                                     }
-                                    .onFailure { snackbar.showSnackbar(it.message ?: "无法导出") }
+                                    .onFailure { snackbar.showSnackbar(it.message ?: context.getString(R.string.msg_export_failed)) }
                             }
                         },
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text("分享未完成文本") }
+                    ) { Text(stringResource(R.string.share_unfinished_plain)) }
                     if (type == ActivityType.PAYMENT || type == ActivityType.SPLIT) {
                         Spacer(Modifier.height(8.dp))
                         OutlinedButton(
                             onClick = {
                                 scope.launch {
                                     runCatching { vm.recordPaidToLedger() }
-                                        .onSuccess { snackbar.showSnackbar("已记入班费") }
-                                        .onFailure { snackbar.showSnackbar(it.message ?: "无法记入") }
+                                        .onSuccess { snackbar.showSnackbar(context.getString(R.string.msg_recorded_ledger)) }
+                                        .onFailure { snackbar.showSnackbar(it.message ?: context.getString(R.string.msg_record_failed)) }
                                 }
                             },
                             enabled = !alreadyInLedger
                         ) {
-                            Text(if (alreadyInLedger) "已收合计已记入班费" else "将已收合计记入班费")
+                            Text(
+                                stringResource(
+                                    if (alreadyInLedger) R.string.recorded_to_ledger else R.string.record_to_ledger
+                                )
+                            )
                         }
                     }
                 }
@@ -586,7 +618,11 @@ fun ActivityDetailScreen(
             } else if (visible.isEmpty()) {
                 item {
                     Text(
-                        if (onlyUnfinished) "没有未完成的同学" else "没有成员快照",
+                        if (onlyUnfinished) {
+                            stringResource(R.string.no_unfinished_members)
+                        } else {
+                            stringResource(R.string.no_member_snapshot)
+                        },
                         modifier = Modifier.padding(24.dp),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -610,7 +646,7 @@ fun ActivityDetailScreen(
                                 if (bmp != null) {
                                     Image(
                                         bitmap = bmp.asImageBitmap(),
-                                        contentDescription = "缴费凭证",
+                                        contentDescription = stringResource(R.string.payment_proof),
                                         modifier = Modifier
                                             .size(48.dp)
                                             .combinedClickable(onClick = {
@@ -625,7 +661,7 @@ fun ActivityDetailScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (type == ActivityType.PAYMENT || type == ActivityType.SPLIT) {
                                     IconButton(onClick = { editing = row }) {
-                                        Icon(Icons.Outlined.Edit, contentDescription = "编辑金额")
+                                        Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.cd_edit_amount))
                                     }
                                 }
                                 StatusBadge(type, row.member.status)
@@ -645,7 +681,7 @@ fun ActivityDetailScreen(
                                 if (type == ActivityType.ATTENDANCE) {
                                     scope.launch {
                                         vm.onLongPress(row)
-                                        snackbar.showSnackbar("已更新请假状态")
+                                        snackbar.showSnackbar(context.getString(R.string.msg_excused_updated))
                                     }
                                 }
                             }
@@ -662,11 +698,11 @@ fun ActivityDetailScreen(
         var editable by remember(pendingReuse) { mutableStateOf(pendingReuse) }
         AlertDialog(
             onDismissRequest = { reuseTitle = null },
-            title = { Text("再开一期") },
+            title = { Text(stringResource(R.string.reuse_title)) },
             text = {
                 Column {
                     Text(
-                        "将按当前名单重新快照，不复制完成状态。可点模板快速改标题。",
+                        stringResource(R.string.reuse_body),
                         style = MaterialTheme.typography.bodySmall
                     )
                     current?.activity?.type?.let { type ->
@@ -675,7 +711,7 @@ fun ActivityDetailScreen(
                             modifier = Modifier.horizontalScroll(rememberScrollState()),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            com.classrecord.app.data.ActivityTemplates.titles(type).forEach { preset ->
+                            com.classrecord.app.data.ActivityTemplates.titles(type, context).forEach { preset ->
                                 FilterChip(
                                     selected = editable == preset,
                                     onClick = { editable = preset },
@@ -689,7 +725,7 @@ fun ActivityDetailScreen(
                         value = editable,
                         onValueChange = { editable = it },
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("新事务标题") },
+                        label = { Text(stringResource(R.string.reuse_new_title)) },
                         singleLine = true
                     )
                 }
@@ -703,14 +739,14 @@ fun ActivityDetailScreen(
                                     reuseTitle = null
                                     onOpenedNew(it)
                                 }
-                                .onFailure { snackbar.showSnackbar(it.message ?: "无法创建") }
+                                .onFailure { snackbar.showSnackbar(it.message ?: context.getString(R.string.err_create_activity)) }
                         }
                     },
                     enabled = editable.isNotBlank()
-                ) { Text("创建") }
+                ) { Text(stringResource(R.string.action_create)) }
             },
             dismissButton = {
-                TextButton(onClick = { reuseTitle = null }) { Text("取消") }
+                TextButton(onClick = { reuseTitle = null }) { Text(stringResource(R.string.action_cancel)) }
             }
         )
     }
@@ -727,7 +763,7 @@ fun ActivityDetailScreen(
                 scope.launch {
                     runCatching { vm.saveAmounts(editRow, due, paid, note, markPaid) }
                         .onSuccess { editing = null }
-                        .onFailure { snackbar.showSnackbar(it.message ?: "保存失败") }
+                        .onFailure { snackbar.showSnackbar(it.message ?: context.getString(R.string.msg_save_detail)) }
                 }
             },
             onPickPhoto = {
@@ -747,8 +783,8 @@ fun ActivityDetailScreen(
             onDeletePhoto = {
                 scope.launch {
                     runCatching { vm.deleteAttachment(editRow) }
-                        .onSuccess { snackbar.showSnackbar("已删除凭证") }
-                        .onFailure { snackbar.showSnackbar(it.message ?: "无法删除") }
+                        .onSuccess { snackbar.showSnackbar(context.getString(R.string.proof_deleted)) }
+                        .onFailure { snackbar.showSnackbar(it.message ?: context.getString(R.string.proof_delete_failed)) }
                 }
             }
         )
@@ -774,14 +810,14 @@ fun ActivityDetailScreen(
         }
         AlertDialog(
             onDismissRequest = { splitEditor = false },
-            title = { Text("调整分摊") },
+            title = { Text(stringResource(R.string.split_edit_title)) },
             text = {
                 Column {
                     OutlinedTextField(
                         value = totalYuan,
                         onValueChange = { totalYuan = it },
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("分摊总额（元）") },
+                        label = { Text(stringResource(R.string.split_edit_total)) },
                         singleLine = true
                     )
                     Spacer(Modifier.height(8.dp))
@@ -798,13 +834,13 @@ fun ActivityDetailScreen(
                         scope.launch {
                             runCatching { vm.applySplit(totalYuan, rows) }
                                 .onSuccess { splitEditor = false }
-                                .onFailure { snackbar.showSnackbar(it.message ?: "无法保存") }
+                                .onFailure { snackbar.showSnackbar(it.message ?: context.getString(R.string.err_save_failed)) }
                         }
                     }
-                ) { Text("保存") }
+                ) { Text(stringResource(R.string.action_save)) }
             },
             dismissButton = {
-                TextButton(onClick = { splitEditor = false }) { Text("取消") }
+                TextButton(onClick = { splitEditor = false }) { Text(stringResource(R.string.action_cancel)) }
             }
         )
     }
@@ -814,33 +850,41 @@ fun ActivityDetailScreen(
         val bmp = remember(preview) { vm.attachmentStore.loadThumb(preview, 1600) }
         AlertDialog(
             onDismissRequest = { viewingPath = null },
-            title = { Text("缴费凭证") },
+            title = { Text(stringResource(R.string.payment_proof)) },
             text = {
                 if (bmp != null) {
                     Image(
                         bitmap = bmp.asImageBitmap(),
-                        contentDescription = "缴费凭证",
+                        contentDescription = stringResource(R.string.payment_proof),
                         modifier = Modifier.fillMaxWidth(),
                         contentScale = ContentScale.Fit
                     )
                 } else {
-                    Text("无法显示图片")
+                    Text(stringResource(R.string.proof_cannot_show))
                 }
             },
             confirmButton = {
-                TextButton(onClick = { viewingPath = null }) { Text("关闭") }
+                TextButton(onClick = { viewingPath = null }) { Text(stringResource(R.string.cd_close)) }
             }
         )
     }
 }
 
+@Composable
 private fun buildSupport(type: ActivityType, row: ActivityMemberRow): String {
+    val dash = stringResource(R.string.em_dash)
     val bits = mutableListOf<String>()
-    row.studentNo?.let { bits += "学号 $it" }
-    if (!row.member.included) bits += "不参与分摊"
+    row.studentNo?.let { bits += stringResource(R.string.student_no_label, it) }
+    if (!row.member.included) bits += stringResource(R.string.not_in_split)
     if (type == ActivityType.PAYMENT || type == ActivityType.SPLIT) {
-        bits += "应缴 ${row.member.amountDue?.let { Money.formatYuan(it) } ?: "—"}"
-        bits += "已缴 ${row.member.amountPaid?.let { Money.formatYuan(it) } ?: "—"}"
+        bits += stringResource(
+            R.string.amount_due_short,
+            row.member.amountDue?.let { Money.formatYuan(it) } ?: dash
+        )
+        bits += stringResource(
+            R.string.amount_paid_short,
+            row.member.amountPaid?.let { Money.formatYuan(it) } ?: dash
+        )
     }
     row.member.note?.let { bits += it }
     return bits.joinToString(" · ")
@@ -864,14 +908,14 @@ private fun AmountDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("编辑 ${row.name}") },
+        title = { Text(stringResource(R.string.edit_member_title, row.name)) },
         text = {
             Column {
                 OutlinedTextField(
                     value = due,
                     onValueChange = { due = it },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("应缴（元）") },
+                    label = { Text(stringResource(R.string.csv_col_due)) },
                     singleLine = true
                 )
                 Spacer(Modifier.height(8.dp))
@@ -879,7 +923,7 @@ private fun AmountDialog(
                     value = paid,
                     onValueChange = { paid = it },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("已缴（元）") },
+                    label = { Text(stringResource(R.string.csv_col_paid)) },
                     singleLine = true
                 )
                 Spacer(Modifier.height(8.dp))
@@ -887,16 +931,16 @@ private fun AmountDialog(
                     value = note,
                     onValueChange = { note = it },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("备注") },
+                    label = { Text(stringResource(R.string.csv_col_note)) },
                     minLines = 2
                 )
                 Spacer(Modifier.height(12.dp))
-                Text("缴费凭证", style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.payment_proof), style = MaterialTheme.typography.labelLarge)
                 Spacer(Modifier.height(6.dp))
                 if (thumb != null) {
                     Image(
                         bitmap = thumb.asImageBitmap(),
-                        contentDescription = "缴费凭证",
+                        contentDescription = stringResource(R.string.payment_proof),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(120.dp)
@@ -906,24 +950,24 @@ private fun AmountDialog(
                     Spacer(Modifier.height(6.dp))
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = onPickPhoto) { Text("相册") }
-                    OutlinedButton(onClick = onTakePhoto) { Text("拍照") }
+                    OutlinedButton(onClick = onPickPhoto) { Text(stringResource(R.string.pick_gallery)) }
+                    OutlinedButton(onClick = onTakePhoto) { Text(stringResource(R.string.pick_camera)) }
                     if (row.member.attachmentPath != null) {
-                        OutlinedButton(onClick = onDeletePhoto) { Text("删除图片") }
+                        OutlinedButton(onClick = onDeletePhoto) { Text(stringResource(R.string.delete_image)) }
                     }
                 }
                 Spacer(Modifier.height(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { onSave(due, paid, note, true) }) { Text("标记已缴") }
-                    OutlinedButton(onClick = { onSave(due, paid, note, false) }) { Text("标记未缴") }
+                    Button(onClick = { onSave(due, paid, note, true) }) { Text(stringResource(R.string.mark_paid)) }
+                    OutlinedButton(onClick = { onSave(due, paid, note, false) }) { Text(stringResource(R.string.mark_unpaid)) }
                 }
             }
         },
         confirmButton = {
-            TextButton(onClick = { onSave(due, paid, note, null) }) { Text("保存") }
+            TextButton(onClick = { onSave(due, paid, note, null) }) { Text(stringResource(R.string.action_save)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("取消") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         }
     )
 }

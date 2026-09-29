@@ -1,4 +1,6 @@
 package com.classrecord.app.ui.classprofile
+import androidx.compose.ui.res.stringResource
+import com.classrecord.app.R
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -60,7 +62,8 @@ class ClassEditViewModel(private val classRepository: ClassRepository) : ViewMod
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClassEditScreen(onDone: () -> Unit) {
-    val app = LocalContext.current.applicationContext as ClassRecordApp
+    val context = LocalContext.current
+    val app = context.applicationContext as ClassRecordApp
     val vm: ClassEditViewModel = viewModel(factory = AppViewModelFactory(app.container))
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -70,10 +73,10 @@ fun ClassEditScreen(onDone: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("班级名称") },
+                title = { Text(stringResource(R.string.class_edit_title)) },
                 navigationIcon = {
                     IconButton(onClick = onDone) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 }
             )
@@ -85,7 +88,7 @@ fun ClassEditScreen(onDone: () -> Unit) {
                 value = vm.name,
                 onValueChange = vm::onName,
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("班级名称") },
+                label = { Text(stringResource(R.string.class_edit_title)) },
                 singleLine = true
             )
             Spacer(Modifier.height(20.dp))
@@ -93,12 +96,12 @@ fun ClassEditScreen(onDone: () -> Unit) {
                 onClick = {
                     scope.launch {
                         runCatching { vm.save(); onDone() }
-                            .onFailure { snackbar.showSnackbar("请填写班级名称") }
+                            .onFailure { snackbar.showSnackbar(context.getString(R.string.err_class_name_required)) }
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = vm.name.isNotBlank()
-            ) { Text("保存") }
+            ) { Text(stringResource(R.string.action_save)) }
         }
     }
 }

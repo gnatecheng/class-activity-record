@@ -53,6 +53,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import com.classrecord.app.R
 
 data class OnboardingUiState(
     val step: Int = 0,
@@ -116,7 +118,8 @@ class OnboardingViewModel(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnboardingScreen(onFinished: (goToWizard: Boolean) -> Unit) {
-    val app = LocalContext.current.applicationContext as ClassRecordApp
+    val context = LocalContext.current
+    val app = context.applicationContext as ClassRecordApp
     val vm: OnboardingViewModel = viewModel(factory = AppViewModelFactory(app.container))
     val ui by vm.ui.collectAsStateWithLifecycle()
     val members by vm.members.collectAsStateWithLifecycle()
@@ -124,7 +127,7 @@ fun OnboardingScreen(onFinished: (goToWizard: Boolean) -> Unit) {
     val scope = rememberCoroutineScope()
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("开始使用") }) },
+        topBar = { TopAppBar(title = { Text(stringResource(R.string.onboarding_title)) }) },
         snackbarHost = { SnackbarHost(snackbar) }
     ) { padding ->
         Column(
@@ -148,7 +151,7 @@ fun OnboardingScreen(onFinished: (goToWizard: Boolean) -> Unit) {
                     onNext = {
                         scope.launch {
                             runCatching { vm.saveClassName() }
-                                .onFailure { snackbar.showSnackbar("请填写班级名称") }
+                                .onFailure { snackbar.showSnackbar(context.getString(R.string.err_class_name_required)) }
                         }
                     }
                 )
@@ -161,13 +164,13 @@ fun OnboardingScreen(onFinished: (goToWizard: Boolean) -> Unit) {
                     onAdd = {
                         scope.launch {
                             runCatching { vm.addMember() }
-                                .onFailure { snackbar.showSnackbar("请填写同学姓名") }
+                                .onFailure { snackbar.showSnackbar(context.getString(R.string.err_member_name_required)) }
                         }
                     },
                     onBack = { vm.back() },
                     onNext = {
                         if (members.isEmpty()) {
-                            scope.launch { snackbar.showSnackbar("请至少添加一名同学") }
+                            scope.launch { snackbar.showSnackbar(context.getString(R.string.err_at_least_one_member)) }
                         } else {
                             vm.next()
                         }
@@ -184,7 +187,7 @@ fun OnboardingScreen(onFinished: (goToWizard: Boolean) -> Unit) {
                     onNext = {
                         scope.launch {
                             runCatching { vm.saveOptionalGroup() }
-                                .onFailure { snackbar.showSnackbar(it.message ?: "无法创建小团体") }
+                                .onFailure { snackbar.showSnackbar(it.message ?: context.getString(R.string.err_create_subgroup)) }
                         }
                     }
                 )
@@ -201,13 +204,13 @@ fun OnboardingScreen(onFinished: (goToWizard: Boolean) -> Unit) {
 private fun StepClassName(name: String, onName: (String) -> Unit, onNext: () -> Unit) {
     Column(Modifier.verticalScroll(rememberScrollState())) {
         Text(
-            "给班级起个名字",
+            stringResource(R.string.onboarding_class_headline),
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.primary
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "本应用只管理一个班级。名称之后可以随时修改。",
+            stringResource(R.string.onboarding_class_body),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -216,13 +219,13 @@ private fun StepClassName(name: String, onName: (String) -> Unit, onNext: () -> 
             value = name,
             onValueChange = onName,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("班级名称") },
+            label = { Text(stringResource(R.string.class_edit_title)) },
             singleLine = true,
-            placeholder = { Text("例如：高三（2）班") }
+            placeholder = { Text(stringResource(R.string.onboarding_class_hint)) }
         )
         Spacer(Modifier.height(24.dp))
         Button(onClick = onNext, modifier = Modifier.fillMaxWidth(), enabled = name.isNotBlank()) {
-            Text("下一步")
+            Text(stringResource(R.string.action_next))
         }
     }
 }
@@ -240,12 +243,12 @@ private fun StepMembers(
 ) {
     Column(Modifier.fillMaxSize()) {
         Text(
-            "添加同学",
+            stringResource(R.string.onboarding_members_headline),
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.appColors.classScope.color
         )
         Text(
-            "先把名单建好，之后创建事务时会按当时的名单生成快照。",
+            stringResource(R.string.onboarding_members_body),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -254,7 +257,7 @@ private fun StepMembers(
             value = name,
             onValueChange = onName,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("姓名") },
+            label = { Text(stringResource(R.string.csv_col_name)) },
             singleLine = true
         )
         Spacer(Modifier.height(8.dp))
@@ -262,26 +265,28 @@ private fun StepMembers(
             value = studentNo,
             onValueChange = onStudentNo,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("学号（可选）") },
+            label = { Text(stringResource(R.string.member_student_no)) },
             singleLine = true
         )
         Spacer(Modifier.height(8.dp))
         OutlinedButton(onClick = onAdd, modifier = Modifier.fillMaxWidth(), enabled = name.isNotBlank()) {
-            Text("添加到名单")
+            Text(stringResource(R.string.onboarding_add_to_list))
         }
         Spacer(Modifier.height(12.dp))
-        Text("已添加 ${members.size} 人", style = MaterialTheme.typography.labelLarge)
+        Text(stringResource(R.string.onboarding_added_count, members.size), style = MaterialTheme.typography.labelLarge)
         LazyColumn(modifier = Modifier.weight(1f)) {
             items(members, key = { it.id }) { member ->
                 ListItem(
                     headlineContent = { Text(member.name) },
-                    supportingContent = member.studentNo?.let { { Text("学号 $it") } }
+                    supportingContent = member.studentNo?.let {
+                        { Text(stringResource(R.string.student_no_label, it)) }
+                    }
                 )
             }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            TextButton(onClick = onBack) { Text("上一步") }
-            Button(onClick = onNext) { Text("下一步") }
+            TextButton(onClick = onBack) { Text(stringResource(R.string.action_back_step)) }
+            Button(onClick = onNext) { Text(stringResource(R.string.action_next)) }
         }
         Spacer(Modifier.height(12.dp))
     }
@@ -300,12 +305,12 @@ private fun StepGroup(
 ) {
     Column(Modifier.fillMaxSize()) {
         Text(
-            "创建小团体（可选）",
+            stringResource(R.string.onboarding_group_headline),
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.appColors.groupScope.color
         )
         Text(
-            "宿舍、兴趣小组都可以。一名同学可以加入多个小团体。也可以先跳过。",
+            stringResource(R.string.onboarding_group_body),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -314,12 +319,12 @@ private fun StepGroup(
             value = groupName,
             onValueChange = onName,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("小团体名称") },
-            placeholder = { Text("例如：3号宿舍") },
+            label = { Text(stringResource(R.string.onboarding_subgroup_name)) },
+            placeholder = { Text(stringResource(R.string.subgroup_name_hint)) },
             singleLine = true
         )
         Spacer(Modifier.height(8.dp))
-        Text("选择成员", style = MaterialTheme.typography.labelLarge)
+        Text(stringResource(R.string.onboarding_select_members), style = MaterialTheme.typography.labelLarge)
         LazyColumn(modifier = Modifier.weight(1f)) {
             items(members, key = { it.id }) { member ->
                 ListItem(
@@ -339,13 +344,13 @@ private fun StepGroup(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            TextButton(onClick = onBack) { Text("上一步") }
+            TextButton(onClick = onBack) { Text(stringResource(R.string.action_back_step)) }
             Row {
-                TextButton(onClick = onSkip) { Text("跳过") }
+                TextButton(onClick = onSkip) { Text(stringResource(R.string.onboarding_skip)) }
                 Button(
                     onClick = onNext,
                     enabled = groupName.isBlank() || selected.isNotEmpty()
-                ) { Text("下一步") }
+                ) { Text(stringResource(R.string.action_next)) }
             }
         }
         Spacer(Modifier.height(12.dp))
@@ -356,23 +361,23 @@ private fun StepGroup(
 private fun StepDone(onHome: () -> Unit, onWizard: () -> Unit) {
     Column {
         Text(
-            "可以开始记录了",
+            stringResource(R.string.onboarding_done_headline),
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.appColors.success
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "接下来可以为全班或某个小团体创建出勤、缴费、费用分摊或清单。",
+            stringResource(R.string.onboarding_done_body),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(Modifier.height(24.dp))
         Button(onClick = onWizard, modifier = Modifier.fillMaxWidth()) {
-            Text("创建第一项事务")
+            Text(stringResource(R.string.onboarding_first_activity))
         }
         Spacer(Modifier.height(8.dp))
         OutlinedButton(onClick = onHome, modifier = Modifier.fillMaxWidth()) {
-            Text("先去首页看看")
+            Text(stringResource(R.string.onboarding_go_home))
         }
     }
 }
