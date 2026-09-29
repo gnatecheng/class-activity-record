@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">班级事务记录</string>
+    <string name="app_name">多人事务</string>
     <string name="widget_name">未完成人数</string>
     <string name="widget_description">显示近期进行中事务的未完成人数，点按打开应用。</string>
     <string name="widget_unfinished">未完成</string>
@@ -44,7 +44,7 @@
     <string name="settings_sort_desc">学号为空的排在后面，再按姓名。成员名单和事务详情都会使用。</string>
     <string name="settings_backup_title">备份与恢复</string>
     <string name="settings_backup_desc">备份为 zip（含 JSON 与缴费凭证图片）。恢复会覆盖本机全部班级数据。</string>
-    <string name="settings_backup_file">班级事务记录-备份.zip</string>
+    <string name="settings_backup_file">多人事务-备份.zip</string>
     <string name="settings_backup_save">备份到文件</string>
     <string name="settings_backup_share">分享备份</string>
     <string name="settings_backup_restore">从备份恢复</string>
@@ -311,7 +311,7 @@
     <string name="ledger_paid_total_title">%1$s 已收合计</string>
     <string name="err_write_file">无法写入文件</string>
     <string name="err_read_backup">无法读取备份文件</string>
-    <string name="err_not_backup">不是班级事务记录的备份文件</string>
+    <string name="err_not_backup">不是多人事务的备份文件</string>
     <string name="err_no_data_in_backup">备份包里没有数据文件</string>
     <string name="err_write_backup">无法写入备份文件</string>
     <string name="err_read_image">无法读取所选图片</string>

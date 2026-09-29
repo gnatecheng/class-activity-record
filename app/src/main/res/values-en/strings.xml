@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Class Activity Record</string>
+    <string name="app_name">Group Matters</string>
     <string name="widget_name">Incomplete Guests</string>
     <string name="widget_description">Displays the number of incomplete people for a recent active transaction, tap to open the app.</string>
     <string name="widget_unfinished">Incomplete</string>
@@ -44,7 +44,7 @@
     <string name="settings_sort_desc">Empty student IDs sort last, then by name. Used in member lists and activity details.</string>
     <string name="settings_backup_title">Backup and Recovery</string>
     <string name="settings_backup_desc">Backup as zip (with JSON and payment voucher image). Recovery will overwrite all class data on this machine.</string>
-    <string name="settings_backup_file">Class Transaction Record - Backup.zip</string>
+    <string name="settings_backup_file">group-matters-backup.zip</string>
     <string name="settings_backup_save">Backup to file</string>
     <string name="settings_backup_share">Share Backup</string>
     <string name="settings_backup_restore">Restore from backup</string>
@@ -311,7 +311,7 @@ Dan, Eve</string>
     <string name="ledger_paid_total_title">%1$s total received</string>
     <string name="err_write_file">Cannot write to file</string>
     <string name="err_read_backup">Unable to read the backup file!</string>
-    <string name="err_not_backup">Backup file that is not a class transaction record</string>
+    <string name="err_not_backup">Not a Group Matters backup file</string>
     <string name="err_no_data_in_backup">No data files in backup package</string>
     <string name="err_write_backup">Unable to write backup file</string>
     <string name="err_read_image">Unable to read the selected image</string>
