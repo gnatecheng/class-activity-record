@@ -5,7 +5,7 @@
 - **应用名称**：多人事务（英文界面：**Group Matters**）
 - **applicationId**：`com.classrecord.app`
 - **最低系统**：Android 8.0（API 26）
-- **版本**：1.4.0（versionCode 6）
+- **版本**：1.5.0（versionCode 7）
 - **界面语言**：简体中文 / English（设置内可切换）
 
 ## 功能
@@ -28,6 +28,16 @@
 - 催缴文案按微信群可读格式（一人一行、含金额）；详情可复制/分享未完成名单与 CSV
 - 批量导入支持学号在前、Tab 粘贴，重名/同学号会提示；可恢复已归档成员且保留历史事务
 - 新建事务与再开一期提供点名/班费/寝室分摊等快捷标题模板
+- **设置 → 关于**：版本号、构建时间、GitHub 仓库链接
+
+## 更新日志
+
+### 1.5.0
+
+- 应用更名为「多人事务」/ **Group Matters**
+- 设置内可切换简体中文 / English
+- 深色主题：跟随系统或固定浅色 / 深色
+- 设置内新增「关于」页（版本、最后更新、GitHub）
 
 ## 本地运行
 
@@ -63,7 +73,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 打 tag（`v*`）或手动运行 **Release APK** 工作流后，Release 附件文件名为：
 
-`group-matters-<versionName>-<tag>.apk`（例如 `group-matters-1.4.0-v1.4.0.apk`）。
+`group-matters-<versionName>-<tag>.apk`（例如 `group-matters-1.5.0-v1.5.0.apk`）。
 
 下载入口：[Releases](https://github.com/gnatecheng/class-activity-record/releases/latest)（`releases/latest`，不依赖固定文件名）。
 
