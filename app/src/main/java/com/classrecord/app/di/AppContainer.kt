@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.classrecord.app.data.AttachmentStore
+import com.classrecord.app.i18n.AppStrings
 import com.classrecord.app.data.backup.BackupRepository
 import com.classrecord.app.data.db.AppDatabase
 import com.classrecord.app.data.prefs.UserPrefs
@@ -26,15 +27,16 @@ import com.classrecord.app.ui.subgroups.SubGroupsViewModel
 
 class AppContainer(context: Context) {
     val appContext: Context = context.applicationContext
+    val appStrings = AppStrings(appContext)
     val database: AppDatabase = AppDatabase.create(appContext)
     val userPrefs = UserPrefs(appContext)
-    val attachmentStore = AttachmentStore(appContext)
+    val attachmentStore = AttachmentStore(appContext, appStrings)
     val classRepository = ClassRepository(database)
     val memberRepository = MemberRepository(database)
     val subGroupRepository = SubGroupRepository(database)
-    val activityRepository = ActivityRepository(database)
-    val ledgerRepository = LedgerRepository(database)
-    val backupRepository = BackupRepository(appContext, database, attachmentStore)
+    val activityRepository = ActivityRepository(database, appStrings)
+    val ledgerRepository = LedgerRepository(database, appStrings)
+    val backupRepository = BackupRepository(appContext, database, attachmentStore, appStrings)
 }
 
 class AppViewModelFactory(
@@ -63,7 +65,7 @@ class AppViewModelFactory(
             modelClass.isAssignableFrom(ClassEditViewModel::class.java) ->
                 ClassEditViewModel(container.classRepository)
             modelClass.isAssignableFrom(MembersViewModel::class.java) ->
-                MembersViewModel(container.memberRepository, container.userPrefs)
+                MembersViewModel(container.memberRepository, container.userPrefs, container.appStrings)
             modelClass.isAssignableFrom(MemberEditViewModel::class.java) ->
                 MemberEditViewModel(container.memberRepository, memberId)
             modelClass.isAssignableFrom(SubGroupsViewModel::class.java) ->
@@ -78,7 +80,8 @@ class AppViewModelFactory(
                 ActivityWizardViewModel(
                     container.memberRepository,
                     container.subGroupRepository,
-                    container.activityRepository
+                    container.activityRepository,
+                    container.appStrings
                 )
             modelClass.isAssignableFrom(ActivityDetailViewModel::class.java) ->
                 ActivityDetailViewModel(
@@ -87,10 +90,11 @@ class AppViewModelFactory(
                     container.attachmentStore,
                     container.userPrefs,
                     container.appContext,
+                    container.appStrings,
                     requireNotNull(activityId)
                 )
             modelClass.isAssignableFrom(LedgerViewModel::class.java) ->
-                LedgerViewModel(container.ledgerRepository)
+                LedgerViewModel(container.ledgerRepository, container.appStrings)
             modelClass.isAssignableFrom(SettingsViewModel::class.java) ->
                 SettingsViewModel(
                     container.appContext,
@@ -98,7 +102,8 @@ class AppViewModelFactory(
                     container.memberRepository,
                     container.activityRepository,
                     container.ledgerRepository,
-                    container.userPrefs
+                    container.userPrefs,
+                    container.appStrings
                 )
             else -> throw IllegalArgumentException("Unknown ViewModel ${modelClass.name}")
         }

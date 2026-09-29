@@ -1,5 +1,7 @@
 package com.classrecord.app.data
 
+import com.classrecord.app.i18n.AppStrings
+
 data class ParsedMember(
     val name: String,
     val studentNo: String? = null
@@ -37,19 +39,14 @@ data class RosterParseResult(
 object RosterParser {
     private val studentNoPattern = Regex("""^[A-Za-z0-9][A-Za-z0-9._\-]{0,31}$""")
 
-    /**
-     * Accepts multiline, comma,顿号, tab (Excel), or semicolon lists.
-     * A piece like `姓名 学号` / `姓名,学号` / `学号 姓名` becomes name + studentNo
-     * when one token looks like a student number.
-     */
-    fun parse(raw: String, existingActiveNames: Set<String>): RosterParseResult {
+    fun parse(raw: String, existingActiveNames: Set<String>, strings: AppStrings): RosterParseResult {
         val existing = existingActiveNames.map { name ->
             ExistingRosterPerson(id = 0L, name = name, studentNo = null, archived = false)
         }
-        return parse(raw, existing)
+        return parse(raw, existing, strings)
     }
 
-    fun parse(raw: String, existing: List<ExistingRosterPerson>): RosterParseResult {
+    fun parse(raw: String, existing: List<ExistingRosterPerson>, strings: AppStrings): RosterParseResult {
         var skippedBlank = 0
         val tokens = mutableListOf<ParsedMember>()
         normalize(raw).lines().forEach { line ->
@@ -84,21 +81,21 @@ object RosterParser {
             when {
                 item.name in seenNames || (noKey != null && noKey in seenNos) -> {
                     skippedDuplicate += 1
-                    conflicts += RosterConflict(item, "名单里重复：${label(item)}")
+                    conflicts += RosterConflict(item, strings.rosterDup(label(item, strings)))
                 }
                 noKey != null && activeByNo.containsKey(noKey) -> {
                     val other = activeByNo.getValue(noKey)
                     skippedDuplicate += 1
                     conflicts += RosterConflict(
                         item,
-                        "学号 ${item.studentNo} 已是在班的${other.name}"
+                        strings.rosterStudentTaken(item.studentNo!!, other.name)
                     )
                 }
                 item.name in activeByName -> {
                     skippedDuplicate += 1
                     val other = activeByName.getValue(item.name)
-                    val extra = other.studentNo?.let { "（学号 $it）" }.orEmpty()
-                    conflicts += RosterConflict(item, "已在班：${item.name}$extra")
+                    val extra = other.studentNo?.let { strings.rosterStudentNoParen(it) }.orEmpty()
+                    conflicts += RosterConflict(item, strings.rosterAlready(item.name, extra))
                 }
                 noKey != null && archivedByNo.containsKey(noKey) -> {
                     val archived = archivedByNo.getValue(noKey)
@@ -188,7 +185,6 @@ object RosterParser {
 
     private fun looksLikeStudentNo(value: String): Boolean = studentNoPattern.matches(value)
 
-    private fun label(item: ParsedMember): String {
-        return if (item.studentNo != null) "${item.name}（${item.studentNo}）" else item.name
-    }
+    private fun label(item: ParsedMember, strings: AppStrings): String =
+        strings.rosterDisplayLabel(item.name, item.studentNo)
 }

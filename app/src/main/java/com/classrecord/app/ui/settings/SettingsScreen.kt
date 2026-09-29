@@ -43,7 +43,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.classrecord.app.BuildConfig
+import com.classrecord.app.R
+import com.classrecord.app.i18n.AppLanguage
+import com.classrecord.app.i18n.DateFormats
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,6 +59,7 @@ import com.classrecord.app.ClassRecordApp
 import com.classrecord.app.data.MemberSort
 import com.classrecord.app.data.backup.BackupRepository
 import com.classrecord.app.data.csv.Csv
+import com.classrecord.app.i18n.AppStrings
 import com.classrecord.app.data.prefs.ThemeMode
 import com.classrecord.app.data.prefs.UserPrefs
 import com.classrecord.app.data.repo.ActivityRepository
@@ -70,10 +77,12 @@ class SettingsViewModel(
     private val memberRepository: MemberRepository,
     private val activityRepository: ActivityRepository,
     private val ledgerRepository: LedgerRepository,
-    private val userPrefs: UserPrefs
+    private val userPrefs: UserPrefs,
+    private val appStrings: AppStrings
 ) : ViewModel() {
     val sortByStudentNo = userPrefs.sortByStudentNo
     val themeMode = userPrefs.themeMode
+    val appLanguage = userPrefs.appLanguage
 
     fun setSortByStudentNo(value: Boolean) {
         viewModelScope.launch { userPrefs.setSortByStudentNo(value) }
@@ -81,6 +90,10 @@ class SettingsViewModel(
 
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch { userPrefs.setThemeMode(mode) }
+    }
+
+    fun setAppLanguage(language: AppLanguage) {
+        viewModelScope.launch { userPrefs.setAppLanguage(language) }
     }
 
     suspend fun backupTo(uri: Uri) = backupRepository.writeZipTo(uri)
@@ -106,15 +119,15 @@ class SettingsViewModel(
             memberRepository.observeAll().first(),
             sortByStudentNo.first()
         )
-        return Csv.withBom(Csv.members(members))
+        return Csv.withBom(Csv.members(members, appContext, appStrings))
     }
 
     suspend fun ledgerCsvBytes(): ByteArray {
-        return Csv.withBom(Csv.ledger(ledgerRepository.observeAll().first()))
+        return Csv.withBom(Csv.ledger(ledgerRepository.observeAll().first(), appContext, appStrings))
     }
 
     suspend fun activitiesCsvBytes(): ByteArray {
-        return Csv.withBom(Csv.allActivities(activityRepository.snapshotAll()))
+        return Csv.withBom(Csv.allActivities(activityRepository.snapshotAll(), appContext, appStrings))
     }
 
     suspend fun shareCsv(name: String, bytes: ByteArray): File {
@@ -126,7 +139,7 @@ class SettingsViewModel(
 
     private fun writeBytes(uri: Uri, bytes: ByteArray) {
         appContext.contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
-            ?: error("无法写入文件")
+            ?: error(appStrings.errWriteFile())
     }
 }
 
@@ -138,10 +151,17 @@ fun SettingsScreen(onBack: () -> Unit) {
     val vm: SettingsViewModel = viewModel(factory = AppViewModelFactory(app.container))
     val sortByNo by vm.sortByStudentNo.collectAsStateWithLifecycle(initialValue = true)
     val themeMode by vm.themeMode.collectAsStateWithLifecycle(initialValue = ThemeMode.SYSTEM)
+    val appLanguage by vm.appLanguage.collectAsStateWithLifecycle(initialValue = AppLanguage.SYSTEM)
+    val uriHandler = LocalUriHandler.current
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var confirmRestore by remember { mutableStateOf<Uri?>(null) }
     var pendingSave by remember { mutableStateOf<SaveKind?>(null) }
+    val backupFileName = stringResource(R.string.settings_backup_file)
+    val csvMembersName = stringResource(R.string.csv_members)
+    val csvActivitiesName = stringResource(R.string.csv_activities)
+    val csvLedgerName = stringResource(R.string.csv_ledger)
+    val githubUrl = stringResource(R.string.about_github_url)
 
     val backupSaver = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/zip")
@@ -149,8 +169,8 @@ fun SettingsScreen(onBack: () -> Unit) {
         if (uri != null) {
             scope.launch {
                 runCatching { vm.backupTo(uri) }
-                    .onSuccess { snackbar.showSnackbar("已保存备份") }
-                    .onFailure { snackbar.showSnackbar(it.message ?: "备份失败") }
+                    .onSuccess { snackbar.showSnackbar(context.getString(R.string.msg_backup_saved)) }
+                    .onFailure { snackbar.showSnackbar(it.message ?: context.getString(R.string.msg_backup_failed)) }
             }
         }
     }
@@ -172,8 +192,8 @@ fun SettingsScreen(onBack: () -> Unit) {
                         SaveKind.LEDGER -> vm.writeLedgerCsv(uri)
                         SaveKind.ACTIVITIES -> vm.writeActivitiesCsv(uri)
                     }
-                }.onSuccess { snackbar.showSnackbar("已导出 CSV") }
-                    .onFailure { snackbar.showSnackbar(it.message ?: "导出失败") }
+                }.onSuccess { snackbar.showSnackbar(context.getString(R.string.msg_csv_exported)) }
+                    .onFailure { snackbar.showSnackbar(it.message ?: context.getString(R.string.msg_export_failed)) }
             }
         }
     }
@@ -181,10 +201,13 @@ fun SettingsScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("设置") },
+                title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "返回")
+                        Icon(
+                            Icons.AutoMirrored.Outlined.ArrowBack,
+                            contentDescription = stringResource(R.string.cd_back)
+                        )
                     }
                 }
             )
@@ -198,13 +221,17 @@ fun SettingsScreen(onBack: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            Text("外观", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            Text(
+                stringResource(R.string.settings_appearance),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
             Spacer(Modifier.height(8.dp))
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    Text("深色主题", style = MaterialTheme.typography.titleSmall)
+                    Text(stringResource(R.string.settings_theme_title), style = MaterialTheme.typography.titleSmall)
                     Text(
-                        "可跟随系统，或在应用内固定浅色 / 深色。深色模式使用 Material 3 语义色，状态与金额对比清晰。",
+                        stringResource(R.string.settings_theme_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -214,7 +241,15 @@ fun SettingsScreen(onBack: () -> Unit) {
                             FilterChip(
                                 selected = themeMode == mode,
                                 onClick = { vm.setThemeMode(mode) },
-                                label = { Text(mode.label) }
+                                label = {
+                                    Text(
+                                        when (mode) {
+                                            ThemeMode.SYSTEM -> stringResource(R.string.theme_system)
+                                            ThemeMode.LIGHT -> stringResource(R.string.theme_light)
+                                            ThemeMode.DARK -> stringResource(R.string.theme_dark)
+                                        }
+                                    )
+                                }
                             )
                         }
                     }
@@ -222,7 +257,47 @@ fun SettingsScreen(onBack: () -> Unit) {
             }
 
             Spacer(Modifier.height(20.dp))
-            Text("名单排序", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            Text(
+                stringResource(R.string.settings_language_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(Modifier.height(8.dp))
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                    Text(stringResource(R.string.settings_language_title), style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        stringResource(R.string.settings_language_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        AppLanguage.entries.forEach { lang ->
+                            FilterChip(
+                                selected = appLanguage == lang,
+                                onClick = { vm.setAppLanguage(lang) },
+                                label = {
+                                    Text(
+                                        when (lang) {
+                                            AppLanguage.SYSTEM -> stringResource(R.string.lang_system)
+                                            AppLanguage.ZH -> stringResource(R.string.lang_zh)
+                                            AppLanguage.EN -> stringResource(R.string.lang_en)
+                                        }
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
+            Text(
+                stringResource(R.string.settings_sort_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
             Spacer(Modifier.height(8.dp))
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
                 Row(
@@ -232,9 +307,9 @@ fun SettingsScreen(onBack: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text("按学号排序", style = MaterialTheme.typography.titleSmall)
+                        Text(stringResource(R.string.settings_sort_by_no), style = MaterialTheme.typography.titleSmall)
                         Text(
-                            "学号为空的排在后面，再按姓名。成员名单和事务详情都会使用。",
+                            stringResource(R.string.settings_sort_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -244,73 +319,129 @@ fun SettingsScreen(onBack: () -> Unit) {
             }
 
             Spacer(Modifier.height(20.dp))
-            Text("备份与恢复", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            Text(
+                stringResource(R.string.settings_backup_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
             Spacer(Modifier.height(8.dp))
             Text(
-                "备份为 zip（含 JSON 与缴费凭证图片）。恢复会覆盖本机全部班级数据。",
+                stringResource(R.string.settings_backup_desc),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(8.dp))
             Button(
-                onClick = { backupSaver.launch("班级事务记录-备份.zip") },
+                onClick = { backupSaver.launch(backupFileName) },
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("备份到文件") }
+            ) { Text(stringResource(R.string.settings_backup_save)) }
             Spacer(Modifier.height(8.dp))
             OutlinedButton(
                 onClick = {
                     scope.launch {
                         runCatching { vm.backupShareFile() }
-                            .onSuccess { shareFile(context, it, "application/zip", "分享备份") }
-                            .onFailure { snackbar.showSnackbar(it.message ?: "无法分享") }
+                            .onSuccess {
+                                shareFile(
+                                    context,
+                                    it,
+                                    "application/zip",
+                                    context.getString(R.string.share_backup)
+                                )
+                            }
+                            .onFailure {
+                                snackbar.showSnackbar(it.message ?: context.getString(R.string.msg_share_failed))
+                            }
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("分享备份") }
+            ) { Text(stringResource(R.string.settings_backup_share)) }
             Spacer(Modifier.height(8.dp))
             OutlinedButton(
                 onClick = {
                     restorePicker.launch(arrayOf("application/zip", "application/json", "*/*"))
                 },
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("从备份恢复") }
+            ) { Text(stringResource(R.string.settings_backup_restore)) }
 
             Spacer(Modifier.height(20.dp))
-            Text("导出 CSV", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.appColors.success)
+            Text(
+                stringResource(R.string.settings_export_csv),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.appColors.success
+            )
             Spacer(Modifier.height(8.dp))
             OutlinedButton(
                 onClick = {
                     pendingSave = SaveKind.MEMBERS
-                    csvSaver.launch("班级成员.csv")
+                    csvSaver.launch(csvMembersName)
                 },
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("导出成员名单") }
+            ) { Text(stringResource(R.string.settings_export_members)) }
             Spacer(Modifier.height(8.dp))
             OutlinedButton(
                 onClick = {
                     pendingSave = SaveKind.ACTIVITIES
-                    csvSaver.launch("事务进度.csv")
+                    csvSaver.launch(csvActivitiesName)
                 },
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("导出全部事务进度") }
+            ) { Text(stringResource(R.string.settings_export_activities)) }
             Spacer(Modifier.height(8.dp))
             OutlinedButton(
                 onClick = {
                     pendingSave = SaveKind.LEDGER
-                    csvSaver.launch("班费账本.csv")
+                    csvSaver.launch(csvLedgerName)
                 },
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("导出班费账本") }
+            ) { Text(stringResource(R.string.settings_export_ledger)) }
             Spacer(Modifier.height(8.dp))
             TextButton(
                 onClick = {
                     scope.launch {
-                        runCatching { vm.shareCsv("班级成员.csv", vm.membersCsvBytes()) }
-                            .onSuccess { shareFile(context, it, "text/csv", "分享成员 CSV") }
-                            .onFailure { snackbar.showSnackbar(it.message ?: "无法分享") }
+                        runCatching {
+                            vm.shareCsv(context.getString(R.string.csv_members), vm.membersCsvBytes())
+                        }
+                            .onSuccess {
+                                shareFile(
+                                    context,
+                                    it,
+                                    "text/csv",
+                                    context.getString(R.string.share_members_csv)
+                                )
+                            }
+                            .onFailure {
+                                snackbar.showSnackbar(it.message ?: context.getString(R.string.msg_share_failed))
+                            }
                     }
                 }
-            ) { Text("分享成员 CSV") }
+            ) { Text(stringResource(R.string.settings_share_members_csv)) }
+
+            Spacer(Modifier.height(20.dp))
+            Text(
+                stringResource(R.string.settings_about_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(Modifier.height(8.dp))
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                    Text(
+                        "${stringResource(R.string.settings_about_version)} ${BuildConfig.VERSION_NAME}",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        "${stringResource(R.string.settings_about_updated)} ${
+                            DateFormats.formatBuildTime(context, BuildConfig.BUILD_TIME_ISO)
+                        }",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(stringResource(R.string.settings_about_github), style = MaterialTheme.typography.titleSmall)
+                    TextButton(onClick = { uriHandler.openUri(githubUrl) }) {
+                        Text(stringResource(R.string.settings_about_open_github))
+                    }
+                }
+            }
             Spacer(Modifier.height(24.dp))
         }
     }
@@ -319,10 +450,8 @@ fun SettingsScreen(onBack: () -> Unit) {
     if (pending != null) {
         AlertDialog(
             onDismissRequest = { confirmRestore = null },
-            title = { Text("恢复备份？") },
-            text = {
-                Text("将覆盖本机全部班级数据（成员、小团体、事务、账本和缴费凭证），且无法撤销。确定继续？")
-            },
+            title = { Text(stringResource(R.string.settings_restore_title)) },
+            text = { Text(stringResource(R.string.settings_restore_body)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -330,14 +459,18 @@ fun SettingsScreen(onBack: () -> Unit) {
                         confirmRestore = null
                         scope.launch {
                             runCatching { vm.restoreFrom(uri) }
-                                .onSuccess { snackbar.showSnackbar("已恢复备份") }
-                                .onFailure { snackbar.showSnackbar(it.message ?: "恢复失败") }
+                                .onSuccess { snackbar.showSnackbar(context.getString(R.string.msg_restored)) }
+                                .onFailure {
+                                    snackbar.showSnackbar(it.message ?: context.getString(R.string.msg_restore_failed))
+                                }
                         }
                     }
-                ) { Text("覆盖并恢复") }
+                ) { Text(stringResource(R.string.settings_restore_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { confirmRestore = null }) { Text("取消") }
+                TextButton(onClick = { confirmRestore = null }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
             }
         )
     }

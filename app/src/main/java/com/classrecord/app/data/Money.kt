@@ -10,6 +10,8 @@ object Money {
             .replace("￥", "")
             .replace("¥", "")
             .replace("元", "")
+            .replace("CNY", "", ignoreCase = true)
+            .replace("cny", "")
             .replace(",", "")
             .replace(" ", "")
         if (s.isEmpty()) return null

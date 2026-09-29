@@ -59,6 +59,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import com.classrecord.app.R
 
 class SubGroupsViewModel(subGroupRepository: SubGroupRepository) : ViewModel() {
     val groups: StateFlow<List<SubGroupWithMembers>> = subGroupRepository.observeWithMembers()
@@ -77,10 +79,10 @@ fun SubGroupsScreen(onBack: () -> Unit, onEdit: (Long?) -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("班内小团体") },
+                title = { Text(stringResource(R.string.subgroups_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 }
             )
@@ -91,14 +93,14 @@ fun SubGroupsScreen(onBack: () -> Unit, onEdit: (Long?) -> Unit) {
                 containerColor = MaterialTheme.appColors.groupScope.container,
                 contentColor = MaterialTheme.appColors.groupScope.onContainer
             ) {
-                Icon(Icons.Outlined.Add, contentDescription = "添加小团体")
+                Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.cd_add_subgroup))
             }
         }
     ) { padding ->
         if (groups.isEmpty()) {
             EmptyState(
-                title = "还没有小团体",
-                subtitle = "宿舍、值日组都可以。空的小团体不能作为事务范围。",
+                title = stringResource(R.string.subgroups_empty_title),
+                subtitle = stringResource(R.string.subgroups_empty_sub),
                 modifier = Modifier.padding(padding)
             )
         } else {
@@ -109,7 +111,7 @@ fun SubGroupsScreen(onBack: () -> Unit, onEdit: (Long?) -> Unit) {
                 if (archived.isNotEmpty()) {
                     item {
                         Text(
-                            "已归档",
+                            stringResource(R.string.members_section_archived),
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -151,9 +153,10 @@ private fun GroupRow(item: SubGroupWithMembers, onClick: () -> Unit) {
             },
             supportingContent = {
                 val extra = if (empty) {
-                    "暂无成员，不能作为事务范围"
+                    stringResource(R.string.subgroup_no_members)
                 } else {
-                    "${item.memberIds.size} 人" + if (preview.isNotBlank()) " · $preview" else ""
+                    stringResource(R.string.count_people, item.memberIds.size) +
+                        if (preview.isNotBlank()) " · $preview" else ""
                 }
                 Text(
                     extra,
@@ -234,7 +237,8 @@ class SubGroupEditViewModel(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SubGroupEditScreen(groupId: Long?, onDone: () -> Unit) {
-    val app = LocalContext.current.applicationContext as ClassRecordApp
+    val context = LocalContext.current
+    val app = context.applicationContext as ClassRecordApp
     val vm: SubGroupEditViewModel = viewModel(
         factory = AppViewModelFactory(app.container, groupId = groupId)
     )
@@ -245,10 +249,16 @@ fun SubGroupEditScreen(groupId: Long?, onDone: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (groupId == null) "新建小团体" else "编辑小团体") },
+                title = {
+                    Text(
+                        stringResource(
+                            if (groupId == null) R.string.subgroup_new else R.string.subgroup_edit
+                        )
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onDone) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 },
                 actions = {
@@ -256,11 +266,11 @@ fun SubGroupEditScreen(groupId: Long?, onDone: () -> Unit) {
                         onClick = {
                             scope.launch {
                                 runCatching { vm.save(); onDone() }
-                                    .onFailure { snackbar.showSnackbar("请填写名称") }
+                                    .onFailure { snackbar.showSnackbar(context.getString(R.string.err_subgroup_name)) }
                             }
                         },
                         enabled = vm.name.isNotBlank()
-                    ) { Text("保存") }
+                    ) { Text(stringResource(R.string.action_save)) }
                 }
             )
         },
@@ -277,8 +287,8 @@ fun SubGroupEditScreen(groupId: Long?, onDone: () -> Unit) {
                         value = vm.name,
                         onValueChange = vm::onName,
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("名称") },
-                        placeholder = { Text("例如：3号宿舍") },
+                        label = { Text(stringResource(R.string.subgroup_name)) },
+                        placeholder = { Text(stringResource(R.string.subgroup_name_hint)) },
                         singleLine = true
                     )
                     Spacer(Modifier.height(12.dp))
@@ -286,7 +296,7 @@ fun SubGroupEditScreen(groupId: Long?, onDone: () -> Unit) {
                         value = vm.note,
                         onValueChange = vm::onNote,
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("备注（可选）") }
+                        label = { Text(stringResource(R.string.member_note)) }
                     )
                     if (groupId != null) {
                         Spacer(Modifier.height(12.dp))
@@ -294,7 +304,13 @@ fun SubGroupEditScreen(groupId: Long?, onDone: () -> Unit) {
                             FilterChip(
                                 selected = vm.archived,
                                 onClick = { scope.launch { vm.setArchived(!vm.archived) } },
-                                label = { Text(if (vm.archived) "已归档" else "归档") },
+                                label = {
+                                    Text(
+                                        stringResource(
+                                            if (vm.archived) R.string.member_archived else R.string.member_archive_chip
+                                        )
+                                    )
+                                },
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = MaterialTheme.appColors.warningContainer,
                                     selectedLabelColor = MaterialTheme.appColors.onWarning
@@ -303,9 +319,9 @@ fun SubGroupEditScreen(groupId: Long?, onDone: () -> Unit) {
                         }
                     }
                     Spacer(Modifier.height(16.dp))
-                    Text("选择成员（可多选，可为空）", style = MaterialTheme.typography.titleSmall)
+                    Text(stringResource(R.string.subgroup_select_members), style = MaterialTheme.typography.titleSmall)
                     Text(
-                        "修改成员不会影响已经创建的历史事务。",
+                        stringResource(R.string.subgroup_members_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -314,7 +330,9 @@ fun SubGroupEditScreen(groupId: Long?, onDone: () -> Unit) {
             items(members, key = { it.id }) { member ->
                 ListItem(
                     headlineContent = { Text(member.name) },
-                    supportingContent = member.studentNo?.let { { Text("学号 $it") } },
+                    supportingContent = member.studentNo?.let {
+                        { Text(stringResource(R.string.student_no_label, it)) }
+                    },
                     leadingContent = {
                         Checkbox(
                             checked = member.id in vm.selected,

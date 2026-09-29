@@ -1,3 +1,5 @@
+import java.time.Instant
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -15,6 +17,8 @@ android {
         targetSdk = 35
         versionCode = 6
         versionName = "1.4.0"
+        val buildTimeIso = Instant.now().toString()
+        buildConfigField("String", "BUILD_TIME_ISO", "\"$buildTimeIso\"")
     }
 
     buildTypes {
@@ -42,12 +46,17 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+    }
+
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
     }
 }
 
@@ -72,6 +81,9 @@ dependencies {
     ksp(libs.androidx.room.compiler)
 
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.appcompat)
 
     testImplementation(libs.junit)
+    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation("androidx.test:core:1.6.1")
 }

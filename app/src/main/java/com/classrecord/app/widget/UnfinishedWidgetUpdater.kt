@@ -10,24 +10,33 @@ import com.classrecord.app.ClassRecordApp
 import com.classrecord.app.MainActivity
 import com.classrecord.app.R
 import com.classrecord.app.data.repo.ActivityRepository
+import com.classrecord.app.i18n.AppStrings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 object UnfinishedWidgetUpdater {
-    fun observe(app: ClassRecordApp, scope: CoroutineScope, repository: ActivityRepository) {
+    fun observe(
+        app: ClassRecordApp,
+        scope: CoroutineScope,
+        repository: ActivityRepository,
+        @Suppress("UNUSED_PARAMETER") strings: AppStrings
+    ) {
         scope.launch {
             repository.observeList()
                 .distinctUntilChanged()
                 .collect { items ->
-                    updateAll(app, UnfinishedWidgetSnapshot.from(items))
+                    updateAll(app, UnfinishedWidgetSnapshot.from(app, items))
                 }
         }
     }
 
     suspend fun refreshFromDb(context: Context) {
         val app = context.applicationContext as ClassRecordApp
-        val snapshot = UnfinishedWidgetSnapshot.from(app.container.activityRepository.snapshotList())
+        val snapshot = UnfinishedWidgetSnapshot.from(
+            app,
+            app.container.activityRepository.snapshotList()
+        )
         updateAll(context, snapshot)
     }
 

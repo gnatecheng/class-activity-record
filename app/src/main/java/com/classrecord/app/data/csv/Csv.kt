@@ -1,5 +1,7 @@
 package com.classrecord.app.data.csv
 
+import android.content.Context
+import com.classrecord.app.R
 import com.classrecord.app.data.Money
 import com.classrecord.app.data.entity.ActivityType
 import com.classrecord.app.data.entity.LedgerEntry
@@ -7,6 +9,7 @@ import com.classrecord.app.data.entity.LedgerType
 import com.classrecord.app.data.entity.Member
 import com.classrecord.app.data.entity.MemberStatus
 import com.classrecord.app.data.repo.ActivityDetail
+import com.classrecord.app.i18n.AppStrings
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -26,30 +29,45 @@ object Csv {
         return ("\uFEFF$body").toByteArray(Charsets.UTF_8)
     }
 
-    fun members(list: List<Member>): String {
-        val lines = mutableListOf(row("姓名", "学号", "备注", "已归档"))
+    fun members(list: List<Member>, context: Context, strings: AppStrings): String {
+        val lines = mutableListOf(
+            row(
+                context.getString(R.string.csv_col_name),
+                context.getString(R.string.csv_col_student_no),
+                context.getString(R.string.csv_col_note),
+                context.getString(R.string.csv_col_archived)
+            )
+        )
         list.forEach { member ->
             lines += row(
                 member.name,
                 member.studentNo.orEmpty(),
                 member.note.orEmpty(),
-                if (member.archived) "是" else "否"
+                strings.yesNo(member.archived)
             )
         }
         return lines.joinToString("\n")
     }
 
-    fun activityProgress(detail: ActivityDetail): String {
+    fun activityProgress(detail: ActivityDetail, context: Context, strings: AppStrings): String {
         val type = detail.activity.type
         val lines = mutableListOf(
-            row("姓名", "学号", "状态", "参与分摊", "应缴（元）", "已缴（元）", "备注")
+            row(
+                context.getString(R.string.csv_col_name),
+                context.getString(R.string.csv_col_student_no),
+                context.getString(R.string.csv_col_status),
+                context.getString(R.string.csv_col_in_split),
+                context.getString(R.string.csv_col_due),
+                context.getString(R.string.csv_col_paid),
+                context.getString(R.string.csv_col_note)
+            )
         )
         detail.rows.forEach { row ->
             lines += row(
                 row.name,
                 row.studentNo.orEmpty(),
-                row.member.status.label(type),
-                if (row.member.included) "是" else "否",
+                strings.memberStatus(type, row.member.status),
+                strings.yesNo(row.member.included),
                 row.member.amountDue?.let { Money.formatFen(it) }.orEmpty(),
                 row.member.amountPaid?.let { Money.formatFen(it) }.orEmpty(),
                 row.member.note.orEmpty()
@@ -58,13 +76,20 @@ object Csv {
         return lines.joinToString("\n")
     }
 
-    fun unfinished(detail: ActivityDetail): String {
+    fun unfinished(detail: ActivityDetail, context: Context, strings: AppStrings): String {
         val type = detail.activity.type
         val pending = detail.rows.filter {
             it.member.status == MemberStatus.PENDING && it.member.included
         }
         val lines = mutableListOf(
-            row("事务", "姓名", "学号", "应缴（元）", "已缴（元）", "尚欠（元）")
+            row(
+                context.getString(R.string.csv_col_activity),
+                context.getString(R.string.csv_col_name),
+                context.getString(R.string.csv_col_student_no),
+                context.getString(R.string.csv_col_due),
+                context.getString(R.string.csv_col_paid),
+                context.getString(R.string.csv_col_owed)
+            )
         )
         pending.forEach { row ->
             val due = row.member.amountDue
@@ -87,26 +112,44 @@ object Csv {
             val dueSum = pending.sumOf { it.member.amountDue ?: 0L }
             val paidSum = pending.sumOf { it.member.amountPaid ?: 0L }
             val leftSum = (dueSum - paidSum).coerceAtLeast(0L)
-            lines += row("合计", "", "", Money.formatFen(dueSum), Money.formatFen(paidSum), Money.formatFen(leftSum))
+            lines += row(
+                context.getString(R.string.csv_total),
+                "",
+                "",
+                Money.formatFen(dueSum),
+                Money.formatFen(paidSum),
+                Money.formatFen(leftSum)
+            )
         }
         return lines.joinToString("\n")
     }
 
-    fun allActivities(details: List<ActivityDetail>): String {
+    fun allActivities(details: List<ActivityDetail>, context: Context, strings: AppStrings): String {
         val lines = mutableListOf(
-            row("事务", "类型", "范围", "姓名", "学号", "状态", "参与分摊", "应缴（元）", "已缴（元）", "备注")
+            row(
+                context.getString(R.string.csv_col_activity),
+                context.getString(R.string.csv_col_type),
+                context.getString(R.string.csv_col_scope),
+                context.getString(R.string.csv_col_name),
+                context.getString(R.string.csv_col_student_no),
+                context.getString(R.string.csv_col_status),
+                context.getString(R.string.csv_col_in_split),
+                context.getString(R.string.csv_col_due),
+                context.getString(R.string.csv_col_paid),
+                context.getString(R.string.csv_col_note)
+            )
         )
         details.forEach { detail ->
             val type = detail.activity.type
             detail.rows.forEach { row ->
                 lines += row(
                     detail.activity.title,
-                    typeLabel(type),
+                    strings.activityType(type),
                     detail.scopeLabel,
                     row.name,
                     row.studentNo.orEmpty(),
-                    row.member.status.label(type),
-                    if (row.member.included) "是" else "否",
+                    strings.memberStatus(type, row.member.status),
+                    strings.yesNo(row.member.included),
                     row.member.amountDue?.let { Money.formatFen(it) }.orEmpty(),
                     row.member.amountPaid?.let { Money.formatFen(it) }.orEmpty(),
                     row.member.note.orEmpty()
@@ -116,44 +159,29 @@ object Csv {
         return lines.joinToString("\n")
     }
 
-    fun ledger(entries: List<LedgerEntry>): String {
+    fun ledger(entries: List<LedgerEntry>, context: Context, strings: AppStrings): String {
         val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
         val zone = ZoneId.systemDefault()
-        val lines = mutableListOf(row("时间", "类型", "摘要", "金额（元）", "备注"))
+        val lines = mutableListOf(
+            row(
+                context.getString(R.string.csv_col_time),
+                context.getString(R.string.csv_col_type),
+                context.getString(R.string.csv_col_summary),
+                context.getString(R.string.csv_col_amount),
+                context.getString(R.string.csv_col_note)
+            )
+        )
         entries.forEach { entry ->
             val whenText = Instant.ofEpochMilli(entry.createdAt).atZone(zone).format(fmt)
             val signed = if (entry.type == LedgerType.INCOME) entry.amountFen else -entry.amountFen
             lines += row(
                 whenText,
-                if (entry.type == LedgerType.INCOME) "收入" else "支出",
+                strings.ledgerType(entry.type),
                 entry.title,
                 Money.formatFen(signed),
                 entry.note.orEmpty()
             )
         }
         return lines.joinToString("\n")
-    }
-
-    private fun typeLabel(type: ActivityType): String = when (type) {
-        ActivityType.ATTENDANCE -> "出勤"
-        ActivityType.PAYMENT -> "缴费"
-        ActivityType.SPLIT -> "费用分摊"
-        ActivityType.CHECKLIST -> "清单"
-    }
-
-    private fun MemberStatus.label(type: ActivityType): String = when (type) {
-        ActivityType.ATTENDANCE -> when (this) {
-            MemberStatus.PENDING -> "未到"
-            MemberStatus.DONE -> "已到"
-            MemberStatus.EXCUSED -> "请假"
-        }
-        ActivityType.PAYMENT, ActivityType.SPLIT -> when (this) {
-            MemberStatus.DONE -> "已缴"
-            else -> "未缴"
-        }
-        ActivityType.CHECKLIST -> when (this) {
-            MemberStatus.DONE -> "已完成"
-            else -> "未完成"
-        }
     }
 }

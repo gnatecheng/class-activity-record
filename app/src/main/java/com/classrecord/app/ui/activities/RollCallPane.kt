@@ -23,6 +23,8 @@ import com.classrecord.app.data.entity.MemberStatus
 import com.classrecord.app.data.repo.ActivityMemberRow
 import com.classrecord.app.ui.components.StatusBadge
 import com.classrecord.app.ui.theme.appColors
+import androidx.compose.ui.res.stringResource
+import com.classrecord.app.R
 
 @Composable
 fun RollCallPane(
@@ -38,7 +40,11 @@ fun RollCallPane(
 ) {
     Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
         Text(
-            if (total == 0) "没有可点名的同学" else "${index + 1} / $total",
+            if (total == 0) {
+                stringResource(R.string.roll_none)
+            } else {
+                stringResource(R.string.roll_progress, index + 1, total)
+            },
             style = MaterialTheme.typography.titleMedium,
             color = if (total == 0) {
                 MaterialTheme.appColors.success
@@ -48,9 +54,9 @@ fun RollCallPane(
         )
         Spacer(Modifier.height(12.dp))
         if (row == null) {
-            Text("名单已点完。", color = MaterialTheme.appColors.success)
+            Text(stringResource(R.string.roll_done), color = MaterialTheme.appColors.success)
             Spacer(Modifier.height(12.dp))
-            Button(onClick = onExit, modifier = Modifier.fillMaxWidth()) { Text("返回列表") }
+            Button(onClick = onExit, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.roll_back_list)) }
             return
         }
         Card(
@@ -69,7 +75,7 @@ fun RollCallPane(
                 )
                 row.studentNo?.let {
                     Spacer(Modifier.height(4.dp))
-                    Text("学号 $it", color = MaterialTheme.appColors.attendance.color)
+                    Text(stringResource(R.string.student_no_label, it), color = MaterialTheme.appColors.attendance.color)
                 }
                 Spacer(Modifier.height(12.dp))
                 StatusBadge(com.classrecord.app.data.entity.ActivityType.ATTENDANCE, row.member.status)
@@ -79,26 +85,26 @@ fun RollCallPane(
         Button(
             onClick = onPresent,
             modifier = Modifier.fillMaxWidth()
-        ) { Text("已到") }
+        ) { Text(stringResource(R.string.roll_present)) }
         Spacer(Modifier.height(8.dp))
         OutlinedButton(
             onClick = onAbsent,
             modifier = Modifier.fillMaxWidth()
-        ) { Text("未到") }
+        ) { Text(stringResource(R.string.roll_absent)) }
         Spacer(Modifier.height(8.dp))
         OutlinedButton(
             onClick = onExcused,
             modifier = Modifier.fillMaxWidth()
-        ) { Text("请假") }
+        ) { Text(stringResource(R.string.roll_excused)) }
         Spacer(Modifier.height(12.dp))
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            TextButton(onClick = onBack, enabled = index > 0) { Text("上一位") }
-            TextButton(onClick = onSkip, enabled = index < total - 1) { Text("跳过") }
-            TextButton(onClick = onExit) { Text("退出连续点名") }
+            TextButton(onClick = onBack, enabled = index > 0) { Text(stringResource(R.string.roll_prev)) }
+            TextButton(onClick = onSkip, enabled = index < total - 1) { Text(stringResource(R.string.roll_skip)) }
+            TextButton(onClick = onExit) { Text(stringResource(R.string.roll_exit)) }
         }
     }
 }

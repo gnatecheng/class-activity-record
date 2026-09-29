@@ -53,26 +53,31 @@ import com.classrecord.app.data.entity.LedgerType
 import com.classrecord.app.data.repo.LedgerRepository
 import com.classrecord.app.di.AppViewModelFactory
 import com.classrecord.app.ui.components.EmptyState
-import com.classrecord.app.ui.home.formatDate
+import com.classrecord.app.i18n.DateFormats
 import com.classrecord.app.ui.theme.appColors
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import com.classrecord.app.R
 
 data class LedgerUiState(
     val entries: List<LedgerEntry> = emptyList(),
     val balanceFen: Long = 0L
 )
 
-class LedgerViewModel(private val ledgerRepository: LedgerRepository) : ViewModel() {
+class LedgerViewModel(
+    private val ledgerRepository: LedgerRepository,
+    private val appStrings: com.classrecord.app.i18n.AppStrings
+) : ViewModel() {
     val state: StateFlow<LedgerUiState> = ledgerRepository.observeAll()
         .map { LedgerUiState(it, LedgerMath.balanceFen(it)) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LedgerUiState())
 
     suspend fun add(type: LedgerType, yuan: String, title: String, note: String) {
-        val fen = Money.parseYuanToFen(yuan) ?: error("请填写有效金额")
+        val fen = Money.parseYuanToFen(yuan) ?: error(appStrings.errLedgerInvalidAmount())
         ledgerRepository.add(type, fen, title, note)
     }
 
@@ -84,7 +89,8 @@ class LedgerViewModel(private val ledgerRepository: LedgerRepository) : ViewMode
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LedgerScreen(onBack: () -> Unit) {
-    val app = LocalContext.current.applicationContext as ClassRecordApp
+    val context = LocalContext.current
+    val app = context.applicationContext as ClassRecordApp
     val vm: LedgerViewModel = viewModel(factory = AppViewModelFactory(app.container))
     val state by vm.state.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
@@ -94,10 +100,10 @@ fun LedgerScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("班费账本") },
+                title = { Text(stringResource(R.string.ledger_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 }
             )
@@ -108,7 +114,7 @@ fun LedgerScreen(onBack: () -> Unit) {
                 containerColor = MaterialTheme.appColors.moneyContainer,
                 contentColor = MaterialTheme.appColors.onMoney
             ) {
-                Icon(Icons.Outlined.Add, contentDescription = "记一笔")
+                Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.ledger_add_title))
             }
         },
         snackbarHost = { SnackbarHost(snackbar) }
@@ -126,7 +132,7 @@ fun LedgerScreen(onBack: () -> Unit) {
                     )
                 ) {
                     Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
-                        Text("当前余额", style = MaterialTheme.typography.labelLarge)
+                        Text(stringResource(R.string.ledger_balance_label), style = MaterialTheme.typography.labelLarge)
                         Text(
                             Money.formatYuan(state.balanceFen),
                             style = MaterialTheme.typography.headlineMedium,
@@ -137,7 +143,7 @@ fun LedgerScreen(onBack: () -> Unit) {
                             }
                         )
                         Text(
-                            "收入减支出。缴费事务可在详情页「将已收合计记入班费」。",
+                            stringResource(R.string.ledger_balance_hint),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -147,8 +153,8 @@ fun LedgerScreen(onBack: () -> Unit) {
             if (state.entries.isEmpty()) {
                 item {
                     EmptyState(
-                        title = "还没有流水",
-                        subtitle = "点右下角记一笔收入或支出，或从缴费/分摊事务记入已收合计。"
+                        title = stringResource(R.string.ledger_empty_title),
+                        subtitle = stringResource(R.string.ledger_empty_sub)
                     )
                 }
             } else {
@@ -156,10 +162,12 @@ fun LedgerScreen(onBack: () -> Unit) {
                     ListItem(
                         headlineContent = { Text(entry.title) },
                         supportingContent = {
-                            val kind = if (entry.type == LedgerType.INCOME) "收入" else "支出"
+                            val kind = stringResource(
+                                if (entry.type == LedgerType.INCOME) R.string.ledger_income else R.string.ledger_expense
+                            )
                             val extra = buildList {
                                 add(kind)
-                                add(formatDate(entry.createdAt))
+                                add(DateFormats.formatDate(context, entry.createdAt))
                                 entry.note?.let { add(it) }
                             }
                             Text(extra.joinToString(" · "))
@@ -178,7 +186,7 @@ fun LedgerScreen(onBack: () -> Unit) {
                                 IconButton(onClick = {
                                     scope.launch { vm.delete(entry.id) }
                                 }) {
-                                    Icon(Icons.Outlined.Delete, contentDescription = "删除")
+                                    Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.cd_delete))
                                 }
                             }
                         }
@@ -196,7 +204,7 @@ fun LedgerScreen(onBack: () -> Unit) {
                 scope.launch {
                     runCatching { vm.add(type, yuan, title, note) }
                         .onSuccess { showAdd = false }
-                        .onFailure { snackbar.showSnackbar(it.message ?: "无法保存") }
+                        .onFailure { snackbar.showSnackbar(it.message ?: context.getString(R.string.err_save_failed)) }
                 }
             }
         )
@@ -215,14 +223,14 @@ private fun LedgerAddDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("记一笔") },
+        title = { Text(stringResource(R.string.ledger_add_title)) },
         text = {
             Column {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(
                         selected = type == LedgerType.INCOME,
                         onClick = { type = LedgerType.INCOME },
-                        label = { Text("收入") },
+                        label = { Text(stringResource(R.string.ledger_income)) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.appColors.successContainer,
                             selectedLabelColor = MaterialTheme.appColors.onSuccess
@@ -231,7 +239,7 @@ private fun LedgerAddDialog(
                     FilterChip(
                         selected = type == LedgerType.EXPENSE,
                         onClick = { type = LedgerType.EXPENSE },
-                        label = { Text("支出") },
+                        label = { Text(stringResource(R.string.ledger_expense)) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.errorContainer,
                             selectedLabelColor = MaterialTheme.colorScheme.onErrorContainer
@@ -243,16 +251,22 @@ private fun LedgerAddDialog(
                     value = title,
                     onValueChange = { title = it },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("摘要") },
+                    label = { Text(stringResource(R.string.csv_col_summary)) },
                     singleLine = true,
-                    placeholder = { Text(if (type == LedgerType.INCOME) "例如：班费收入" else "例如：买扫把") }
+                    placeholder = {
+                        Text(
+                            stringResource(
+                                if (type == LedgerType.INCOME) R.string.ledger_income_hint else R.string.ledger_expense_hint
+                            )
+                        )
+                    }
                 )
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = yuan,
                     onValueChange = { yuan = it },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("金额（元）") },
+                    label = { Text(stringResource(R.string.csv_col_amount)) },
                     singleLine = true
                 )
                 Spacer(Modifier.height(8.dp))
@@ -260,7 +274,7 @@ private fun LedgerAddDialog(
                     value = note,
                     onValueChange = { note = it },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("备注（可选）") }
+                    label = { Text(stringResource(R.string.member_note)) }
                 )
             }
         },
@@ -268,10 +282,10 @@ private fun LedgerAddDialog(
             TextButton(
                 onClick = { onSave(type, yuan, title, note) },
                 enabled = title.isNotBlank() && yuan.isNotBlank()
-            ) { Text("保存") }
+            ) { Text(stringResource(R.string.action_save)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("取消") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         }
     )
 }

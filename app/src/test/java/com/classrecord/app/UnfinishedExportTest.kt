@@ -11,8 +11,16 @@ import com.classrecord.app.data.repo.ActivityDetail
 import com.classrecord.app.data.repo.ActivityMemberRow
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [26], qualifiers = "zh-rCN")
 class UnfinishedExportTest {
+    private val context = TestContext.context
+    private val strings = TestContext.strings
+
     @Test
     fun unfinishedCsvListsPendingAmounts() {
         val detail = ActivityDetail(
@@ -38,7 +46,7 @@ class UnfinishedExportTest {
                 )
             )
         )
-        val csv = Csv.unfinished(detail)
+        val csv = Csv.unfinished(detail, context, strings)
         assertTrue(csv.contains("甲"))
         assertTrue(csv.contains("33.00"))
         assertTrue(csv.contains("合计"))
@@ -47,8 +55,12 @@ class UnfinishedExportTest {
 
     @Test
     fun attendancePresetsIncludeTodayRollCall() {
-        val titles = ActivityTemplates.titles(ActivityType.ATTENDANCE, 1_726_272_000_000L)
+        val titles = ActivityTemplates.titles(
+            ActivityType.ATTENDANCE,
+            context,
+            1_726_272_000_000L
+        )
         assertTrue(titles.any { it.startsWith("今日点名") })
-        assertTrue(ActivityTemplates.titles(ActivityType.SPLIT).any { it.contains("寝室") })
+        assertTrue(ActivityTemplates.titles(ActivityType.SPLIT, context).any { it.contains("寝室") })
     }
 }

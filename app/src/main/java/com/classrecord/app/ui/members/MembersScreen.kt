@@ -59,10 +59,13 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import com.classrecord.app.R
 
 class MembersViewModel(
     private val memberRepository: MemberRepository,
-    userPrefs: com.classrecord.app.data.prefs.UserPrefs
+    userPrefs: com.classrecord.app.data.prefs.UserPrefs,
+    private val appStrings: com.classrecord.app.i18n.AppStrings
 ) : ViewModel() {
     val members: StateFlow<List<Member>> = memberRepository.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -77,26 +80,22 @@ class MembersViewModel(
                 archived = it.archived
             )
         }
-        return RosterParser.parse(raw, existing)
+        return RosterParser.parse(raw, existing, appStrings)
     }
 
     suspend fun confirmImport(raw: String): String {
         val preview = previewImport(raw)
         val added = memberRepository.addAll(preview.toInsert)
         val restored = memberRepository.restoreArchived(preview.toRestore)
-        return when {
-            added == 0 && restored == 0 -> "没有可导入的新同学"
-            restored == 0 -> "已导入 $added 人"
-            added == 0 -> "已恢复归档 $restored 人，历史事务记录仍保留"
-            else -> "已导入 $added 人，恢复归档 $restored 人"
-        }
+        return appStrings.importResultMessage(added, restored)
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MembersScreen(onBack: () -> Unit, onEdit: (Long?) -> Unit) {
-    val app = LocalContext.current.applicationContext as ClassRecordApp
+    val context = LocalContext.current
+    val app = context.applicationContext as ClassRecordApp
     val vm: MembersViewModel = viewModel(factory = AppViewModelFactory(app.container))
     val members by vm.members.collectAsStateWithLifecycle()
     val sortByNo by vm.sortByStudentNo.collectAsStateWithLifecycle(initialValue = true)
@@ -112,15 +111,15 @@ fun MembersScreen(onBack: () -> Unit, onEdit: (Long?) -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("班级成员") },
+                title = { Text(stringResource(R.string.members_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 },
                 actions = {
                     IconButton(onClick = { showImport = true }) {
-                        Icon(Icons.AutoMirrored.Outlined.PlaylistAdd, contentDescription = "批量导入")
+                        Icon(Icons.AutoMirrored.Outlined.PlaylistAdd, contentDescription = stringResource(R.string.cd_bulk_import))
                     }
                 }
             )
@@ -132,14 +131,14 @@ fun MembersScreen(onBack: () -> Unit, onEdit: (Long?) -> Unit) {
                 containerColor = MaterialTheme.appColors.classScope.container,
                 contentColor = MaterialTheme.appColors.classScope.onContainer
             ) {
-                Icon(Icons.Outlined.Add, contentDescription = "添加成员")
+                Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.member_edit_add))
             }
         }
     ) { padding ->
         if (members.isEmpty()) {
             EmptyState(
-                title = "还没有同学",
-                subtitle = "点右下角添加姓名。学号和备注可选。",
+                title = stringResource(R.string.members_empty_title),
+                subtitle = stringResource(R.string.members_empty_sub),
                 modifier = Modifier.padding(padding)
             )
         } else {
@@ -154,7 +153,7 @@ fun MembersScreen(onBack: () -> Unit, onEdit: (Long?) -> Unit) {
                 if (archived.isNotEmpty()) {
                     item {
                         Text(
-                            "已归档",
+                            stringResource(R.string.members_section_archived),
                             style = MaterialTheme.typography.titleSmall,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -180,7 +179,7 @@ fun MembersScreen(onBack: () -> Unit, onEdit: (Long?) -> Unit) {
                             showImport = false
                             snackbar.showSnackbar(message)
                         }
-                        .onFailure { snackbar.showSnackbar(it.message ?: "导入失败") }
+                        .onFailure { snackbar.showSnackbar(it.message ?: context.getString(R.string.import_failed)) }
                 }
             }
         )
@@ -193,16 +192,20 @@ private fun ImportMembersDialog(
     onPreview: (String) -> RosterParseResult,
     onConfirm: (String) -> Unit
 ) {
+    val context = LocalContext.current
+    val app = context.applicationContext as ClassRecordApp
+    val strings = app.container.appStrings
     var text by remember { mutableStateOf("") }
     val preview = remember(text) { onPreview(text) }
+    val ellipsis = stringResource(R.string.import_preview_ellipsis)
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("批量导入名单") },
+        title = { Text(stringResource(R.string.import_title)) },
         text = {
             Column {
                 Text(
-                    "每行一位，或用逗号、顿号、Tab 分隔。支持「姓名 学号」「学号 姓名」。同名或同学号会提示；已归档的可一并恢复，历史事务记录仍保留。",
+                    stringResource(R.string.import_help),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -213,31 +216,40 @@ private fun ImportMembersDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(180.dp),
-                    placeholder = { Text("张三\n李四 2023002\n2023003 王五\n赵六、钱七") }
+                    placeholder = { Text(stringResource(R.string.import_placeholder)) }
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
                     buildString {
-                        append("将导入 ${preview.insertCount} 人")
-                        if (preview.restoreCount > 0) append("，恢复归档 ${preview.restoreCount} 人")
-                        if (preview.skippedDuplicate > 0) append("，跳过冲突 ${preview.skippedDuplicate}")
-                        if (preview.skippedBlank > 0) append("，空行 ${preview.skippedBlank}")
+                        append(stringResource(R.string.import_will_add, preview.insertCount))
+                        if (preview.restoreCount > 0) {
+                            append(stringResource(R.string.import_preview_restore_suffix, preview.restoreCount))
+                        }
+                        if (preview.skippedDuplicate > 0) {
+                            append(stringResource(R.string.import_preview_skip_conflict, preview.skippedDuplicate))
+                        }
+                        if (preview.skippedBlank > 0) {
+                            append(stringResource(R.string.import_preview_skip_blank, preview.skippedBlank))
+                        }
                     },
                     style = MaterialTheme.typography.bodyMedium
                 )
                 if (preview.toInsert.isNotEmpty()) {
                     Text(
                         preview.toInsert.take(8).joinToString("、") {
-                            if (it.studentNo != null) "${it.name}（${it.studentNo}）" else it.name
-                        } + if (preview.toInsert.size > 8) "…" else "",
+                            strings.rosterDisplayLabel(it.name, it.studentNo)
+                        } + if (preview.toInsert.size > 8) ellipsis else "",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 if (preview.toRestore.isNotEmpty()) {
                     Text(
-                        "将恢复：" + preview.toRestore.take(6).joinToString("、") { it.name } +
-                            if (preview.toRestore.size > 6) "…" else "",
+                        stringResource(
+                            R.string.import_will_restore,
+                            preview.toRestore.take(6).joinToString("、") { it.name } +
+                                if (preview.toRestore.size > 6) ellipsis else ""
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.appColors.success
                     )
@@ -245,7 +257,7 @@ private fun ImportMembersDialog(
                 if (preview.conflicts.isNotEmpty()) {
                     Text(
                         preview.conflicts.take(6).joinToString("\n") { it.hint } +
-                            if (preview.conflicts.size > 6) "\n…" else "",
+                            if (preview.conflicts.size > 6) "\n$ellipsis" else "",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.appColors.warning
                     )
@@ -259,15 +271,16 @@ private fun ImportMembersDialog(
             ) {
                 val label = when {
                     preview.restoreCount > 0 && preview.insertCount > 0 ->
-                        "导入 ${preview.insertCount}、恢复 ${preview.restoreCount}"
-                    preview.restoreCount > 0 -> "恢复 ${preview.restoreCount} 人"
-                    else -> "导入 ${preview.insertCount} 人"
+                        stringResource(R.string.import_confirm_both, preview.insertCount, preview.restoreCount)
+                    preview.restoreCount > 0 ->
+                        stringResource(R.string.import_confirm_restore, preview.restoreCount)
+                    else -> stringResource(R.string.import_confirm_import, preview.insertCount)
                 }
                 Text(label)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("取消") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         }
     )
 }
@@ -291,9 +304,9 @@ private fun MemberRow(member: Member, onClick: () -> Unit) {
             headlineContent = { Text(member.name) },
             supportingContent = {
                 val bits = buildList {
-                    member.studentNo?.let { add("学号 $it") }
+                    member.studentNo?.let { add(stringResource(R.string.student_no_label, it)) }
                     member.note?.let { add(it) }
-                    if (member.archived) add("已归档")
+                    if (member.archived) add(stringResource(R.string.member_archived))
                 }
                 if (bits.isNotEmpty()) {
                     Text(
@@ -369,7 +382,8 @@ class MemberEditViewModel(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MemberEditScreen(memberId: Long?, onDone: () -> Unit) {
-    val app = LocalContext.current.applicationContext as ClassRecordApp
+    val context = LocalContext.current
+    val app = context.applicationContext as ClassRecordApp
     val vm: MemberEditViewModel = viewModel(
         factory = AppViewModelFactory(app.container, memberId = memberId)
     )
@@ -379,10 +393,16 @@ fun MemberEditScreen(memberId: Long?, onDone: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (memberId == null) "添加成员" else "编辑成员") },
+                title = {
+                    Text(
+                        stringResource(
+                            if (memberId == null) R.string.member_edit_add else R.string.member_edit_edit
+                        )
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onDone) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 },
                 actions = {
@@ -390,11 +410,11 @@ fun MemberEditScreen(memberId: Long?, onDone: () -> Unit) {
                         onClick = {
                             scope.launch {
                                 runCatching { vm.save(); onDone() }
-                                    .onFailure { host.showSnackbar("请填写姓名") }
+                                    .onFailure { host.showSnackbar(context.getString(R.string.err_name_required)) }
                             }
                         },
                         enabled = vm.name.isNotBlank()
-                    ) { Text("保存") }
+                    ) { Text(stringResource(R.string.action_save)) }
                 }
             )
         },
@@ -409,7 +429,7 @@ fun MemberEditScreen(memberId: Long?, onDone: () -> Unit) {
                 value = vm.name,
                 onValueChange = vm::onName,
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("姓名") },
+                label = { Text(stringResource(R.string.csv_col_name)) },
                 singleLine = true
             )
             Spacer(Modifier.height(12.dp))
@@ -417,7 +437,7 @@ fun MemberEditScreen(memberId: Long?, onDone: () -> Unit) {
                 value = vm.studentNo,
                 onValueChange = vm::onStudentNo,
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("学号（可选）") },
+                label = { Text(stringResource(R.string.member_student_no)) },
                 singleLine = true
             )
             Spacer(Modifier.height(12.dp))
@@ -425,7 +445,7 @@ fun MemberEditScreen(memberId: Long?, onDone: () -> Unit) {
                 value = vm.note,
                 onValueChange = vm::onNote,
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("备注（可选）") }
+                label = { Text(stringResource(R.string.member_note)) }
             )
             if (memberId != null) {
                 Spacer(Modifier.height(16.dp))
@@ -433,7 +453,13 @@ fun MemberEditScreen(memberId: Long?, onDone: () -> Unit) {
                     FilterChip(
                         selected = vm.archived,
                         onClick = { scope.launch { vm.setArchived(!vm.archived) } },
-                        label = { Text(if (vm.archived) "已归档（不参与新事务）" else "归档") },
+                        label = {
+                            Text(
+                                stringResource(
+                                    if (vm.archived) R.string.member_archived_chip else R.string.member_archive_chip
+                                )
+                            )
+                        },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.appColors.warningContainer,
                             selectedLabelColor = MaterialTheme.appColors.onWarning
@@ -441,7 +467,7 @@ fun MemberEditScreen(memberId: Long?, onDone: () -> Unit) {
                     )
                 }
                 Text(
-                    "归档后不再进入新事务，历史点名、缴费记录会保留。",
+                    stringResource(R.string.member_archive_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 8.dp)

@@ -1,5 +1,7 @@
 package com.classrecord.app.widget
 
+import android.content.Context
+import com.classrecord.app.R
 import com.classrecord.app.data.repo.ActivityListItem
 
 data class UnfinishedWidgetSnapshot(
@@ -8,7 +10,7 @@ data class UnfinishedWidgetSnapshot(
     val detail: String
 ) {
     companion object {
-        fun from(items: List<ActivityListItem>): UnfinishedWidgetSnapshot {
+        fun from(context: Context, items: List<ActivityListItem>): UnfinishedWidgetSnapshot {
             val active = items.filter { !it.activity.archived }
             val recent = active.firstOrNull()
             val total = active.sumOf { it.unfinishedCount }
@@ -17,7 +19,7 @@ data class UnfinishedWidgetSnapshot(
                     count = recent.unfinishedCount,
                     caption = recent.activity.title,
                     detail = if (active.size > 1) {
-                        "全部进行中未完成 $total"
+                        context.getString(R.string.widget_all_unfinished, total)
                     } else {
                         "${recent.scopeLabel} · ${recent.doneCount}/${recent.totalCount}"
                     }
@@ -25,8 +27,8 @@ data class UnfinishedWidgetSnapshot(
             } else {
                 UnfinishedWidgetSnapshot(
                     count = total,
-                    caption = "暂无进行中事务",
-                    detail = "点按打开应用"
+                    caption = context.getString(R.string.widget_no_active),
+                    detail = context.getString(R.string.widget_tap_open)
                 )
             }
         }
