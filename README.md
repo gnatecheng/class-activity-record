@@ -75,7 +75,9 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 `group-matters-<versionName>-<tag>.apk`（例如 `group-matters-1.5.0-v1.5.0.apk`）。
 
-下载入口：[Releases](https://github.com/gnatecheng/class-activity-record/releases/latest)（`releases/latest`，不依赖固定文件名）。
+下载入口：[Releases](https://github.com/gnatecheng/group-matters/releases/latest)（`releases/latest`，不依赖固定文件名）。
+
+仓库主页：<https://github.com/gnatecheng/group-matters>
 
 ## 技术栈
 

@@ -348,7 +348,7 @@ Dan, Eve</string>
     <string name="date_build_zh">yyyy年M月d日 HH:mm</string>
     <string name="date_build_en">MMM d, yyyy HH:mm</string>
     <string name="money_yuan">CNY %1$s</string>
-    <string name="about_github_url">https://github.com/gnatecheng/class-activity-record</string>
+    <string name="about_github_url">https://github.com/gnatecheng/group-matters</string>
     <string name="csv_col_name">Name</string>
     <string name="csv_col_student_no">Student ID</string>
     <string name="csv_col_note">Remarks</string>

@@ -348,7 +348,7 @@
     <string name="date_build_zh">yyyy年M月d日 HH:mm</string>
     <string name="date_build_en">MMM d, yyyy HH:mm</string>
     <string name="money_yuan">%1$s 元</string>
-    <string name="about_github_url">https://github.com/gnatecheng/class-activity-record</string>
+    <string name="about_github_url">https://github.com/gnatecheng/group-matters</string>
     <string name="csv_col_name">姓名</string>
     <string name="csv_col_student_no">学号</string>
     <string name="csv_col_note">备注</string>
