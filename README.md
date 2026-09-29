@@ -59,6 +59,14 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 也可把 APK 传到手机后打开安装。桌面小组件在系统桌面小部件列表中名为「未完成人数」。
 
+## GitHub 发布
+
+打 tag（`v*`）或手动运行 **Release APK** 工作流后，Release 附件文件名为：
+
+`group-matters-<versionName>-<tag>.apk`（例如 `group-matters-1.4.0-v1.4.0.apk`）。
+
+下载入口：[Releases](https://github.com/gnatecheng/class-activity-record/releases/latest)（`releases/latest`，不依赖固定文件名）。
+
 ## 技术栈
 
 Kotlin · Jetpack Compose · Material 3 · Navigation Compose · Room · DataStore · App Widget · Flow · Coroutines · MVVM
