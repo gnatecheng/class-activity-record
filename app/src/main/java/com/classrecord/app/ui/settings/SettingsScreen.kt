@@ -87,7 +87,7 @@ class SettingsViewModel(
     val sortByStudentNo = userPrefs.sortByStudentNo
     val themeMode = userPrefs.themeMode
 
-    private val _appliedLanguage = MutableStateFlow(LocaleApplier.readAppliedLanguage())
+    private val _appliedLanguage = MutableStateFlow(LocaleApplier.readAppliedLanguage(appContext))
     val appliedLanguage: StateFlow<AppLanguage> = _appliedLanguage.asStateFlow()
 
     init {
@@ -111,10 +111,18 @@ class SettingsViewModel(
 
     private suspend fun refreshAppliedLanguage() {
         val stored = userPrefs.appLanguage.first()
-        if (LocaleApplier.readAppliedLanguage() != stored) {
-            LocaleApplier.apply(stored)
+        when (stored) {
+            AppLanguage.SYSTEM -> {
+                // Follow system: never push empty locales (preserves OS per-app language).
+                _appliedLanguage.value = AppLanguage.SYSTEM
+            }
+            else -> {
+                if (LocaleApplier.readAppliedLanguage(appContext) != stored) {
+                    LocaleApplier.apply(appContext, stored, allowClearToSystem = false)
+                }
+                _appliedLanguage.value = stored
+            }
         }
-        _appliedLanguage.value = LocaleApplier.readAppliedLanguage()
     }
 
     suspend fun backupTo(uri: Uri) = backupRepository.writeZipTo(uri)
@@ -327,7 +335,11 @@ fun SettingsScreen(onBack: () -> Unit) {
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(Modifier.weight(1f)) {
+                    Column(
+                        Modifier
+                            .weight(1f)
+                            .padding(end = 12.dp)
+                    ) {
                         Text(stringResource(R.string.settings_sort_by_no), style = MaterialTheme.typography.titleSmall)
                         Text(
                             stringResource(R.string.settings_sort_desc),

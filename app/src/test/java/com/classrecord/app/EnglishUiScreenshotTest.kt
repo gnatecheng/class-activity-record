@@ -8,6 +8,7 @@ import android.graphics.Typeface
 import com.classrecord.app.data.Money
 import com.classrecord.app.i18n.AppLanguage
 import com.classrecord.app.i18n.LocaleApplier
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -21,18 +22,23 @@ import java.io.FileOutputStream
 class EnglishUiScreenshotTest {
     @Test
     fun captureEnglishHomeAndFeeDetailPreviews() {
-        LocaleApplier.apply(AppLanguage.EN)
         val context = RuntimeEnvironment.getApplication()
-        val artifacts = File("/opt/cursor/artifacts").apply { mkdirs() }
+        LocaleApplier.apply(context, AppLanguage.EN, allowClearToSystem = true)
+        val artifacts = resolveArtifactDir(context)
+        assumeTrue("Artifact dir not writable: $artifacts", artifacts.mkdirs() || artifacts.isDirectory)
 
         renderCard(
             file = File(artifacts, "english-home-light.png"),
             background = Color.WHITE,
             lines = listOf(
                 "Class 2, Grade 12",
-                context.getString(R.string.members_in_class, 12),
-                "${context.getString(R.string.home_members)} · ${context.getString(R.string.count_people, 12)}",
-                "${context.getString(R.string.home_subgroups)} · ${context.getString(R.string.count_groups, 1)}",
+                context.resources.getQuantityString(R.plurals.members_in_class, 12, 12),
+                "${context.getString(R.string.home_members)} · ${
+                    context.resources.getQuantityString(R.plurals.count_people, 12, 12)
+                }",
+                "${context.getString(R.string.home_subgroups)} · ${
+                    context.resources.getQuantityString(R.plurals.count_groups, 1, 1)
+                }",
                 "${context.getString(R.string.home_ledger)} · ${
                     context.getString(
                         R.string.home_ledger_balance,
@@ -54,8 +60,7 @@ class EnglishUiScreenshotTest {
                 context.getString(R.string.copy_wechat_reminder),
                 context.getString(R.string.record_to_ledger),
                 "${context.getString(R.string.student_no_label, "2026003")} · " +
-                    context.getString(R.string.amount_due_short, Money.formatDisplay(context, 20_000L)) +
-                    " · ${context.getString(R.string.amount_paid_short, context.getString(R.string.em_dash))}",
+                    context.getString(R.string.amount_due_short, Money.formatDisplay(context, 20_000L)),
             ),
         )
 
@@ -65,9 +70,17 @@ class EnglishUiScreenshotTest {
             textColor = Color.WHITE,
             lines = listOf(
                 "Class 2, Grade 12",
-                context.getString(R.string.members_in_class, 12),
+                context.resources.getQuantityString(R.plurals.members_in_class, 12, 12),
             ),
         )
+    }
+
+    private fun resolveArtifactDir(context: android.content.Context): File {
+        val env = System.getenv("CURSOR_ARTIFACTS")
+        if (!env.isNullOrBlank()) {
+            return File(env)
+        }
+        return File(context.cacheDir, "test-screenshots")
     }
 
     private fun renderCard(

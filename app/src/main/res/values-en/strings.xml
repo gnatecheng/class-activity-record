@@ -41,7 +41,7 @@
     <string name="theme_dark">Dark</string>
     <string name="settings_sort_title">Member list order</string>
     <string name="settings_sort_by_no">Sort by student ID</string>
-    <string name="settings_sort_desc">Members without a student ID appear last, then sorted by name. Used on member lists and activity details.</string>
+    <string name="settings_sort_desc">Sorted by student ID; members without one are listed last, by name.</string>
     <string name="settings_backup_title">Backup &amp; restore</string>
     <string name="settings_backup_desc">Back up as a ZIP (JSON plus payment proof images). Restore replaces all class data on this device.</string>
     <string name="settings_backup_file">group-matters-backup.zip</string>
@@ -74,9 +74,6 @@
     <string name="csv_activities">activity-progress.csv</string>
     <string name="csv_ledger">class-fund-ledger.csv</string>
     <string name="unnamed_class">Unnamed class</string>
-    <string name="members_in_class">%1$d members</string>
-    <string name="count_people">%1$d people</string>
-    <string name="count_groups">%1$d groups</string>
     <string name="home_members">Members</string>
     <string name="home_subgroups">Groups</string>
     <string name="home_ledger">Class fund</string>
@@ -174,7 +171,7 @@ Dan, Eve</string>
     <string name="err_subgroup_name">Enter a name</string>
     <string name="ledger_title">Class fund</string>
     <string name="ledger_balance_label">Current balance</string>
-    <string name="ledger_balance_hint">Income minus expenses. On fee collection activities, use Add collected fees to class fund on the detail screen.</string>
+    <string name="ledger_balance_hint">Income minus expenses. To record a fee collection, open it and tap “Add collected fees to class fund”.</string>
     <string name="ledger_empty_title">No entries yet</string>
     <string name="ledger_empty_sub">Tap Add entry for income or expense, or post totals from fee collection or cost split activities.</string>
     <string name="ledger_income">Income</string>
@@ -195,7 +192,7 @@ Dan, Eve</string>
     <string name="wizard_no_subgroups">No groups yet.</string>
     <string name="wizard_type_attendance_desc">Absent, present, or excused. Tap to toggle present; long-press for excused.</string>
     <string name="wizard_type_payment_desc">Set an amount per person. Mark paid or unpaid; amounts display in yuan (¥).</string>
-    <string name="wizard_type_split_desc">Enter a total and split evenly across the scope; remainder cents go to the first members.</string>
+    <string name="wizard_type_split_desc">Enter a total and split evenly across the scope; any remainder goes to the first members.</string>
     <string name="wizard_type_checklist_desc">Simple done/not-done checkboxes for homework or tasks.</string>
     <string name="wizard_title_label">Title</string>
     <string name="wizard_title_attendance">e.g. Monday morning attendance</string>
@@ -237,7 +234,7 @@ Dan, Eve</string>
     <string name="msg_unarchived">Unarchived</string>
     <string name="msg_archive_failed">Couldn\'t update archive</string>
     <string name="total_prefix">Total %1$s</string>
-    <string name="progress_prefix">Progress: %1$d / %2$d</string>
+    <string name="progress_prefix">Progress: %1$d of %2$d done</string>
     <string name="progress_paid">%1$d / %2$d paid</string>
     <string name="onboarding_load_sample">Explore with sample class</string>
     <string name="demo_seed_unavailable">Sample class can\'t be loaded while you already have class data.</string>
@@ -246,7 +243,8 @@ Dan, Eve</string>
     <string name="hint_tap_payment">Tap a row to toggle paid; tap ✎ to edit the amount</string>
     <string name="hint_tap_checklist">Tap to toggle done</string>
     <string name="filter_unfinished_only">Outstanding only</string>
-    <string name="roll_call_continuous">Continuous roll call</string>
+    <string name="filter_attendance_not_checked_in">Not checked in only</string>
+    <string name="roll_call_continuous">Quick roll call</string>
     <string name="wechat_hint">Reminders are formatted for WeChat groups: one person per line, with amounts when relevant.</string>
     <string name="copy_wechat_reminder">Copy reminder (WeChat)</string>
     <string name="record_to_ledger">Add collected fees to class fund</string>

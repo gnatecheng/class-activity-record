@@ -176,7 +176,7 @@ fun LedgerScreen(onBack: () -> Unit) {
                             Row {
                                 Text(
                                     (if (entry.type == LedgerType.INCOME) "+" else "−") +
-                                        Money.formatFen(entry.amountFen),
+                                        Money.formatDisplay(LocalContext.current, entry.amountFen),
                                     color = if (entry.type == LedgerType.INCOME) {
                                         MaterialTheme.appColors.success
                                     } else {

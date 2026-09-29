@@ -1,38 +1,48 @@
 package com.classrecord.app
 
+import androidx.lifecycle.Lifecycle
+import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.classrecord.app.data.prefs.UserPrefs
 import com.classrecord.app.i18n.AppLanguage
 import com.classrecord.app.i18n.LocaleApplier
-import java.io.File
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
-import org.junit.Before
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@org.robolectric.annotation.Config(application = android.app.Application::class)
+@Config(application = ClassRecordApp::class, sdk = [34])
 class AppLanguageMigrationTest {
-    @Before
-    fun clearPrefs() {
+    @Test
+    fun pendingChineseAppliedWhenMainActivityStarts() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
-        File(context.filesDir, "datastore").deleteRecursively()
-        context.getSharedPreferences(LocaleApplier.PREFS_BOOT, android.content.Context.MODE_PRIVATE)
-            .edit()
-            .clear()
-            .commit()
+        val prefs = (context.applicationContext as ClassRecordApp).container.userPrefs
+        prefs.configureLocaleStateForTests(
+            language = AppLanguage.ZH,
+            migrated = false,
+            pending = AppLanguage.ZH,
+        )
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.moveToState(Lifecycle.State.RESUMED)
+        }
+        assertEquals(AppLanguage.ZH, LocaleApplier.readAppliedLanguage(context))
     }
 
     @Test
-    fun migrateCopiesBootEnglishIntoDataStoreAndApplies() = runBlocking {
+    fun followSystemDoesNotClearFrameworkLocalesOnSettingsRefresh() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
-        LocaleApplier.persistForBoot(context, AppLanguage.EN)
-        val prefs = UserPrefs(context)
-        prefs.migrateAndApplyStoredLanguage()
-        assertEquals(AppLanguage.EN, prefs.appLanguage.first())
-        assertEquals("en", LocaleApplier.applicationLocalesFor(AppLanguage.EN)[0]?.language)
+        LocaleApplier.apply(context, AppLanguage.ZH, allowClearToSystem = true)
+        val prefs = (context.applicationContext as ClassRecordApp).container.userPrefs
+        prefs.configureLocaleStateForTests(
+            language = AppLanguage.SYSTEM,
+            migrated = true,
+            pending = null,
+        )
+        LocaleApplier.apply(context, AppLanguage.SYSTEM, allowClearToSystem = false)
+        assertEquals(AppLanguage.ZH, LocaleApplier.readAppliedLanguage(context))
     }
 }

@@ -40,9 +40,14 @@ import com.classrecord.app.ui.settings.SettingsScreen
 import com.classrecord.app.ui.subgroups.SubGroupEditScreen
 import com.classrecord.app.ui.subgroups.SubGroupsScreen
 import com.classrecord.app.ui.theme.ClassRecordTheme
+import kotlinx.coroutines.runBlocking
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        val app = application as ClassRecordApp
+        runBlocking {
+            app.container.userPrefs.applyPendingLocaleIfNeeded(this@MainActivity)
+        }
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {

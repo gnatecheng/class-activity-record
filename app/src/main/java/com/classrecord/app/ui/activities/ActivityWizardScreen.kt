@@ -63,6 +63,7 @@ import com.classrecord.app.di.AppViewModelFactory
 import com.classrecord.app.ui.components.label
 import com.classrecord.app.R
 import com.classrecord.app.i18n.DateFormats
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.classrecord.app.ui.theme.appColors
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -394,7 +395,11 @@ private fun ScopeStep(
                     Column {
                         Text(group.group.name, color = groupTint.color)
                         Text(
-                            stringResource(R.string.count_people, group.memberIds.size),
+                            pluralStringResource(
+                                R.plurals.count_people,
+                                group.memberIds.size,
+                                group.memberIds.size,
+                            ),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

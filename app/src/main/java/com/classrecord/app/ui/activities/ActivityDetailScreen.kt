@@ -508,7 +508,17 @@ fun ActivityDetailScreen(
                         FilterChip(
                             selected = onlyUnfinished,
                             onClick = { vm.setOnlyUnfinished(!onlyUnfinished) },
-                            label = { Text(stringResource(R.string.filter_unfinished_only)) },
+                            label = {
+                                Text(
+                                    stringResource(
+                                        if (type == ActivityType.ATTENDANCE) {
+                                            R.string.filter_attendance_not_checked_in
+                                        } else {
+                                            R.string.filter_unfinished_only
+                                        }
+                                    )
+                                )
+                            },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = MaterialTheme.appColors.warningContainer,
                                 selectedLabelColor = MaterialTheme.appColors.onWarning

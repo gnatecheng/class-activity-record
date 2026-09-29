@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="members_in_class">
+        <item quantity="other">在班 %d 人</item>
+    </plurals>
+    <plurals name="count_people">
+        <item quantity="other">%d 人</item>
+    </plurals>
+    <plurals name="count_groups">
+        <item quantity="other">%d 个</item>
+    </plurals>
+</resources>

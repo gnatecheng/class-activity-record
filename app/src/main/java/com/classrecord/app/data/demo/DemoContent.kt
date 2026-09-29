@@ -37,7 +37,7 @@ internal object DemoContent {
             DemoMemberSpec("Grace Wu", "2026007"),
             DemoMemberSpec("Henry Xu", "2026008"),
             DemoMemberSpec("Ivy Sun", "2026009"),
-            DemoMemberSpec("Jack Ma", "2026010"),
+            DemoMemberSpec("James Tan", "2026010"),
             DemoMemberSpec("Kelly Zhou", "2026011"),
             DemoMemberSpec("Leo Yang", "2026012"),
         ),
@@ -114,7 +114,7 @@ internal object DemoContent {
                 paidCount = 7,
             ),
             DemoActivitySpec(
-                title = "寝室水电分摊",
+                title = "寝室水费分摊",
                 type = com.classrecord.app.data.entity.ActivityType.SPLIT,
                 note = "301 寝室 9 月水费。",
                 scopeSubgroup = true,

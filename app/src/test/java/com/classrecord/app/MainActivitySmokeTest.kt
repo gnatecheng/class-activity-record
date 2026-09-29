@@ -8,6 +8,7 @@ import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
@@ -15,12 +16,14 @@ import org.robolectric.annotation.Config
 class MainActivitySmokeTest {
     @After
     fun resetLocales() {
-        LocaleApplier.apply(AppLanguage.SYSTEM)
+        val context = RuntimeEnvironment.getApplication()
+        LocaleApplier.apply(context, AppLanguage.SYSTEM, allowClearToSystem = true)
     }
 
     @Test
     fun mainActivityResumesInChineseLocale() {
-        LocaleApplier.apply(AppLanguage.ZH)
+        val context = RuntimeEnvironment.getApplication()
+        LocaleApplier.apply(context, AppLanguage.ZH, allowClearToSystem = true)
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.moveToState(Lifecycle.State.RESUMED)
         }
@@ -28,7 +31,8 @@ class MainActivitySmokeTest {
 
     @Test
     fun mainActivityResumesInEnglishLocale() {
-        LocaleApplier.apply(AppLanguage.EN)
+        val context = RuntimeEnvironment.getApplication()
+        LocaleApplier.apply(context, AppLanguage.EN, allowClearToSystem = true)
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.moveToState(Lifecycle.State.RESUMED)
         }
