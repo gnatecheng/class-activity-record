@@ -217,7 +217,7 @@ fun HomeScreen(
                     title = stringResource(R.string.home_ledger),
                     subtitle = stringResource(
                         R.string.home_ledger_balance,
-                        Money.formatYuan(state.ledgerBalanceFen)
+                        Money.formatDisplay(LocalContext.current, state.ledgerBalanceFen)
                     ),
                     containerColor = MaterialTheme.appColors.ledgerShortcut,
                     icon = {

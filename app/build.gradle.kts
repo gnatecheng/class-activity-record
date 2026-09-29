@@ -15,8 +15,8 @@ android {
         applicationId = "com.classrecord.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
-        versionName = "1.5.0"
+        versionCode = 8
+        versionName = "1.5.1"
         val buildTimeIso = Instant.now().toString()
         buildConfigField("String", "BUILD_TIME_ISO", "\"$buildTimeIso\"")
     }
@@ -86,4 +86,6 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation("org.robolectric:robolectric:4.14.1")
     testImplementation("androidx.test:core:1.6.1")
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation("androidx.compose.ui:ui-test-junit4")
 }

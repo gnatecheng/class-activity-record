@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Class Affairs</string>
+    <string name="app_name">Group Matters</string>
     <string name="widget_name">Unfinished count</string>
     <string name="widget_description">Shows how many people are still unfinished on recent active activities. Tap to open the app.</string>
     <string name="widget_unfinished">Unfinished</string>
@@ -44,7 +44,7 @@
     <string name="settings_sort_desc">Members without a student ID appear last, then sorted by name. Used on member lists and activity details.</string>
     <string name="settings_backup_title">Backup &amp; restore</string>
     <string name="settings_backup_desc">Back up as a ZIP (JSON plus payment proof images). Restore replaces all class data on this device.</string>
-    <string name="settings_backup_file">class-affairs-backup.zip</string>
+    <string name="settings_backup_file">group-matters-backup.zip</string>
     <string name="settings_backup_save">Save backup to file</string>
     <string name="settings_backup_share">Share backup</string>
     <string name="settings_backup_restore">Restore from backup</string>
@@ -74,7 +74,7 @@
     <string name="csv_activities">activity-progress.csv</string>
     <string name="csv_ledger">class-fund-ledger.csv</string>
     <string name="unnamed_class">Unnamed class</string>
-    <string name="members_in_class">%1$d in class</string>
+    <string name="members_in_class">%1$d members</string>
     <string name="count_people">%1$d people</string>
     <string name="count_groups">%1$d groups</string>
     <string name="home_members">Members</string>

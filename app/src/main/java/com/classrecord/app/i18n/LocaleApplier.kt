@@ -5,9 +5,15 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 
 object LocaleApplier {
+    fun applicationLocalesFor(language: AppLanguage): LocaleListCompat =
+        when (language) {
+            AppLanguage.SYSTEM -> LocaleListCompat.getEmptyLocaleList()
+            AppLanguage.EN -> LocaleListCompat.forLanguageTags("en")
+            AppLanguage.ZH -> LocaleListCompat.forLanguageTags("zh")
+        }
+
     fun apply(language: AppLanguage) {
-        val tag = resolveAppLocale(language).toLanguageTag()
-        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(tag))
+        AppCompatDelegate.setApplicationLocales(applicationLocalesFor(language))
     }
 
     fun syncFromBlocking(context: Context): AppLanguage {

@@ -238,6 +238,10 @@
     <string name="msg_archive_failed">无法更新归档</string>
     <string name="total_prefix">总额 %1$s</string>
     <string name="progress_prefix">进度 %1$d/%2$d</string>
+    <string name="progress_paid">已缴 %1$d/%2$d</string>
+    <string name="onboarding_load_sample">加载示例班级</string>
+    <string name="demo_seed_unavailable">已有班级数据，无法加载示例。</string>
+    <string name="demo_seed_failed">加载示例失败</string>
     <string name="hint_tap_attendance">点按切换未到/已到，长按请假</string>
     <string name="hint_tap_payment">点按切换已缴/未缴；点编辑可改金额</string>
     <string name="hint_tap_checklist">点按切换完成状态</string>

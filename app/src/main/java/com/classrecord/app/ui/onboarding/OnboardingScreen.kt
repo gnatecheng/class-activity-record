@@ -40,10 +40,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.classrecord.app.ClassRecordApp
+import com.classrecord.app.data.demo.DemoDataSeeder
 import com.classrecord.app.data.entity.Member
+import com.classrecord.app.data.prefs.UserPrefs
 import com.classrecord.app.data.repo.ClassRepository
 import com.classrecord.app.data.repo.MemberRepository
 import com.classrecord.app.data.repo.SubGroupRepository
+import com.classrecord.app.i18n.resolveAppLocale
+import kotlinx.coroutines.flow.first
 import com.classrecord.app.di.AppViewModelFactory
 import com.classrecord.app.ui.theme.appColors
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -68,7 +72,9 @@ data class OnboardingUiState(
 class OnboardingViewModel(
     private val classRepository: ClassRepository,
     private val memberRepository: MemberRepository,
-    private val subGroupRepository: SubGroupRepository
+    private val subGroupRepository: SubGroupRepository,
+    private val demoDataSeeder: DemoDataSeeder,
+    private val userPrefs: UserPrefs,
 ) : ViewModel() {
     private val _ui = MutableStateFlow(OnboardingUiState())
     val ui: StateFlow<OnboardingUiState> = _ui.asStateFlow()
@@ -113,6 +119,12 @@ class OnboardingViewModel(
             it.copy(selectedMemberIds = next)
         }
     }
+
+    suspend fun loadSampleClass(): Boolean {
+        val mode = userPrefs.appLanguage.first()
+        val english = resolveAppLocale(mode).language.startsWith("en")
+        return demoDataSeeder.seedIfEmpty(english)
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -153,7 +165,24 @@ fun OnboardingScreen(onFinished: (goToWizard: Boolean) -> Unit) {
                             runCatching { vm.saveClassName() }
                                 .onFailure { snackbar.showSnackbar(context.getString(R.string.err_class_name_required)) }
                         }
-                    }
+                    },
+                    onLoadSample = {
+                        scope.launch {
+                            runCatching { vm.loadSampleClass() }
+                                .onSuccess { loaded ->
+                                    if (loaded) {
+                                        onFinished(false)
+                                    } else {
+                                        snackbar.showSnackbar(context.getString(R.string.demo_seed_unavailable))
+                                    }
+                                }
+                                .onFailure {
+                                    snackbar.showSnackbar(
+                                        it.message ?: context.getString(R.string.demo_seed_failed)
+                                    )
+                                }
+                        }
+                    },
                 )
                 1 -> StepMembers(
                     members = members,
@@ -201,7 +230,12 @@ fun OnboardingScreen(onFinished: (goToWizard: Boolean) -> Unit) {
 }
 
 @Composable
-private fun StepClassName(name: String, onName: (String) -> Unit, onNext: () -> Unit) {
+private fun StepClassName(
+    name: String,
+    onName: (String) -> Unit,
+    onNext: () -> Unit,
+    onLoadSample: () -> Unit,
+) {
     Column(Modifier.verticalScroll(rememberScrollState())) {
         Text(
             stringResource(R.string.onboarding_class_headline),
@@ -226,6 +260,10 @@ private fun StepClassName(name: String, onName: (String) -> Unit, onNext: () -> 
         Spacer(Modifier.height(24.dp))
         Button(onClick = onNext, modifier = Modifier.fillMaxWidth(), enabled = name.isNotBlank()) {
             Text(stringResource(R.string.action_next))
+        }
+        Spacer(Modifier.height(12.dp))
+        OutlinedButton(onClick = onLoadSample, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.onboarding_load_sample))
         }
     }
 }

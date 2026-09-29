@@ -468,14 +468,28 @@ fun ActivityDetailScreen(
                         Text(
                             stringResource(
                                 R.string.total_prefix,
-                                Money.formatYuan(current.activity.totalAmount!!)
+                                Money.formatDisplay(context, current.activity.totalAmount!!)
                             ),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
                     Spacer(Modifier.height(8.dp))
+                    val progressLabel = when (type) {
+                        ActivityType.PAYMENT, ActivityType.SPLIT ->
+                            stringResource(
+                                R.string.progress_paid,
+                                current.doneCount,
+                                current.totalCount
+                            )
+                        else ->
+                            stringResource(
+                                R.string.progress_prefix,
+                                current.doneCount,
+                                current.totalCount
+                            )
+                    }
                     Text(
-                        stringResource(R.string.progress_prefix, current.doneCount, current.totalCount),
+                        progressLabel,
                         style = MaterialTheme.typography.titleMedium,
                         color = if (current.unfinishedCount == 0) {
                             MaterialTheme.appColors.success
@@ -879,11 +893,11 @@ private fun buildSupport(type: ActivityType, row: ActivityMemberRow): String {
     if (type == ActivityType.PAYMENT || type == ActivityType.SPLIT) {
         bits += stringResource(
             R.string.amount_due_short,
-            row.member.amountDue?.let { Money.formatYuan(it) } ?: dash
+            row.member.amountDue?.let { Money.formatDisplay(LocalContext.current, it) } ?: dash
         )
         bits += stringResource(
             R.string.amount_paid_short,
-            row.member.amountPaid?.let { Money.formatYuan(it) } ?: dash
+            row.member.amountPaid?.let { Money.formatDisplay(LocalContext.current, it) } ?: dash
         )
     }
     row.member.note?.let { bits += it }

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.classrecord.app.data.AttachmentStore
+import com.classrecord.app.data.demo.DemoDataSeeder
 import com.classrecord.app.i18n.AppStrings
 import com.classrecord.app.data.backup.BackupRepository
 import com.classrecord.app.data.db.AppDatabase
@@ -37,6 +38,14 @@ class AppContainer(context: Context) {
     val activityRepository = ActivityRepository(database, appStrings)
     val ledgerRepository = LedgerRepository(database, appStrings)
     val backupRepository = BackupRepository(appContext, database, attachmentStore, appStrings)
+    val demoDataSeeder = DemoDataSeeder(
+        database,
+        classRepository,
+        memberRepository,
+        subGroupRepository,
+        activityRepository,
+        ledgerRepository,
+    )
 }
 
 class AppViewModelFactory(
@@ -60,7 +69,9 @@ class AppViewModelFactory(
                 OnboardingViewModel(
                     container.classRepository,
                     container.memberRepository,
-                    container.subGroupRepository
+                    container.subGroupRepository,
+                    container.demoDataSeeder,
+                    container.userPrefs,
                 )
             modelClass.isAssignableFrom(ClassEditViewModel::class.java) ->
                 ClassEditViewModel(container.classRepository)

@@ -1,5 +1,7 @@
 package com.classrecord.app.data
 
+import android.content.Context
+import com.classrecord.app.R
 import java.util.Locale
 import kotlin.math.abs
 
@@ -37,7 +39,11 @@ object Money {
         return sign + String.format(Locale.CHINA, "%d.%02d", yuan, cents)
     }
 
+    /** Prefer [formatDisplay] in UI so currency follows the active locale. */
     fun formatYuan(fen: Long): String = "${formatFen(fen)} 元"
+
+    fun formatDisplay(context: Context, fen: Long): String =
+        context.getString(R.string.money_yuan, formatFen(fen))
 
     /**
      * Split [totalFen] across [count] people. The first [remainder] people

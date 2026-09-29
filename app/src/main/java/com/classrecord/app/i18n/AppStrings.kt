@@ -2,6 +2,7 @@ package com.classrecord.app.i18n
 
 import android.content.Context
 import com.classrecord.app.R
+import com.classrecord.app.data.Money
 import com.classrecord.app.data.entity.ActivityType
 import com.classrecord.app.data.entity.LedgerType
 import com.classrecord.app.data.entity.MemberStatus
@@ -125,4 +126,6 @@ class AppStrings(private val context: Context) {
     fun errInvalidSplitTotal(): String = s(R.string.err_invalid_split_total)
 
     fun errLedgerInvalidAmount(): String = s(R.string.err_invalid_amount)
+
+    fun formatMoney(fen: Long): String = s(R.string.money_yuan, Money.formatFen(fen))
 }

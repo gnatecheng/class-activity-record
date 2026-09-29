@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.classrecord.app.data.Money
 import com.classrecord.app.data.SplitPlan
@@ -90,7 +91,14 @@ fun SplitPlanEditor(
                             Text(row.name, style = MaterialTheme.typography.titleSmall)
                             val sub = buildList {
                                 row.studentNo?.let { add(stringResource(R.string.student_no_label, it)) }
-                                if (due != null) add(stringResource(R.string.amount_due_short, Money.formatYuan(due)))
+                                if (due != null) {
+                                    add(
+                                        stringResource(
+                                            R.string.amount_due_short,
+                                            Money.formatDisplay(LocalContext.current, due)
+                                        )
+                                    )
+                                }
                             }.joinToString(" · ")
                             if (sub.isNotEmpty()) {
                                 Text(
