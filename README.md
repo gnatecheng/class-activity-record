@@ -90,12 +90,47 @@ Or transfer the APK to the phone and open it. The home screen widget appears as 
 
 ## GitHub releases
 
-When you push a tag (`v*`) or run the **Release APK** workflow manually, release assets are named:
+Push a **semver tag** `vX.Y.Z` that **exactly matches** `versionName` in `app/build.gradle.kts` (e.g. tag `v1.5.1` when `versionName = "1.5.1"`). The **Release APK** workflow builds a **signed, non-debuggable** release APK and publishes:
 
-`group-matters-<versionName>-<tag>.apk` (e.g. `group-matters-1.5.0-v1.5.0.apk`).
+`group-matters-<versionName>.apk` (e.g. `group-matters-1.5.1.apk`).
 
-Downloads: [Releases](https://github.com/gnatecheng/group-matters/releases/latest) (`releases/latest`; no fixed filename required).
+Downloads: [Releases](https://github.com/gnatecheng/group-matters/releases/latest).
+
+Manual **workflow_dispatch** only verifies the signed release build; it does **not** create a Release. Missing signing secrets fail the job (no debug APK is ever published).
+
+### Release signing & GitHub Secrets
+
+GitHub Actions [`.github/workflows/release-apk.yml`](.github/workflows/release-apk.yml) runs `assembleRelease` with the repo’s release keystore. If required secrets are missing, the workflow **fails with a clear error**—it will not ship an unsigned or debug APK.
+
+| Secret | Purpose |
+| --- | --- |
+| `ANDROID_KEYSTORE_BASE64` | Base64 of the release keystore file |
+| `ANDROID_KEYSTORE_PASSWORD` | Keystore password |
+| `ANDROID_KEY_ALIAS` | Key alias |
+| `ANDROID_KEY_PASSWORD` | (Optional) key password; defaults to store password |
+
+Generate a keystore locally (never commit it):
+
+```bash
+keytool -genkey -v -keystore release.keystore -alias group-matters \
+  -keyalg RSA -keysize 2048 -validity 10000
+base64 -w0 release.keystore   # paste into ANDROID_KEYSTORE_BASE64
+```
+
+Local **debug** builds (`assembleDebug`) work without these variables. To build a signed release locally, set `ANDROID_KEYSTORE_FILE`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, and optionally `ANDROID_KEY_PASSWORD` (see `app/build.gradle.kts`).
+
+### Upgrading from debug installs to signed releases
+
+Release APKs are signed with the **release** key. They **cannot install over** an existing **debug-signed** build with the same `applicationId` (`com.classrecord.app`). To migrate:
+
+1. **Back up** in the app: **Settings → backup to zip**.
+2. Install the new **signed release** APK (uninstall the debug build first if Android blocks the update).
+3. **Restore** from the zip in Settings.
 
 ## Stack
 
 Kotlin · Jetpack Compose · Material 3 · Navigation Compose · Room · DataStore · App Widget · Flow · Coroutines · MVVM
+
+## License
+
+MIT — see [LICENSE](LICENSE).

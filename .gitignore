@@ -11,5 +11,9 @@
 *.apk
 *.ap_
 *.aab
+*.jks
+*.keystore
+keystore.properties
+release.keystore
 /artifacts
 kotlin-js-store

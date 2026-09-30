@@ -89,12 +89,47 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 ## GitHub 发布
 
-打 tag（`v*`）或手动运行 **Release APK** 工作流后，Release 附件文件名为：
+推送 **semver 标签** `vX.Y.Z`，且须与 `app/build.gradle.kts` 中的 `versionName` **完全一致**（例如 `versionName = "1.5.1"` 时标签为 `v1.5.1`）。**Release APK** 工作流会构建 **已签名、不可调试** 的 release 包并发布附件：
 
-`group-matters-<versionName>-<tag>.apk`（例如 `group-matters-1.5.0-v1.5.0.apk`）。
+`group-matters-<versionName>.apk`（例如 `group-matters-1.5.1.apk`）。
 
-下载入口：[Releases](https://github.com/gnatecheng/group-matters/releases/latest)（`releases/latest`，不依赖固定文件名）。
+下载入口：[Releases](https://github.com/gnatecheng/group-matters/releases/latest)。
+
+手动 **workflow_dispatch** 仅用于验证签名 release 构建，**不会**创建 GitHub Release。缺少签名 Secrets 时工作流会 **明确失败**，不会发布 debug 包。
+
+### Release 签名与 GitHub Secrets
+
+GitHub Actions [`.github/workflows/release-apk.yml`](.github/workflows/release-apk.yml) 使用仓库 Secrets 中的发布 keystore 执行 `assembleRelease`。若缺少必需 Secrets，工作流 **失败并提示**——不会发布未签名或 debug APK。
+
+| Secret | 说明 |
+| --- | --- |
+| `ANDROID_KEYSTORE_BASE64` | 发布 keystore 文件的 Base64 |
+| `ANDROID_KEYSTORE_PASSWORD` | keystore 密码 |
+| `ANDROID_KEY_ALIAS` | 密钥别名 |
+| `ANDROID_KEY_PASSWORD` | （可选）密钥密码；省略则使用 store 密码 |
+
+在本地生成 keystore（**切勿提交**）：
+
+```bash
+keytool -genkey -v -keystore release.keystore -alias group-matters \
+  -keyalg RSA -keysize 2048 -validity 10000
+base64 -w0 release.keystore   # 填入 ANDROID_KEYSTORE_BASE64
+```
+
+本地 **debug** 构建（`assembleDebug`）无需上述变量。本地 signed release：设置 `ANDROID_KEYSTORE_FILE`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`，可选 `ANDROID_KEY_PASSWORD`（见 `app/build.gradle.kts`）。
+
+### 从 debug 包迁移到 signed Release
+
+Release APK 使用 **发布证书** 签名，**无法直接覆盖安装** 在同一 `applicationId`（`com.classrecord.app`）下的 **debug 签名** 旧版本。建议步骤：
+
+1. 在应用内 **设置 → 备份到 zip**。
+2. 安装新的 **signed release** APK（若系统阻止更新，可先卸载 debug 包）。
+3. 在设置中 **从备份恢复**。
 
 ## 技术栈
 
 Kotlin · Jetpack Compose · Material 3 · Navigation Compose · Room · DataStore · App Widget · Flow · Coroutines · MVVM
+
+## 许可证
+
+MIT — 见 [LICENSE](LICENSE)。
