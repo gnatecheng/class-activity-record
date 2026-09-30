@@ -31,7 +31,7 @@ class EnglishUiScreenshotTest {
             file = File(artifacts, "english-home-light.png"),
             background = Color.WHITE,
             lines = listOf(
-                "Class 2, Grade 12",
+                "Weekend Badminton Club",
                 context.resources.getQuantityString(R.plurals.members_in_class, 12, 12),
                 "${context.getString(R.string.home_members)} · ${
                     context.resources.getQuantityString(R.plurals.count_people, 12, 12)
@@ -46,7 +46,7 @@ class EnglishUiScreenshotTest {
                     )
                 }",
                 "${context.getString(R.string.type_payment)} · ${context.getString(R.string.scope_whole_class)}",
-                "Autumn trip fee",
+                "Autumn outing fee",
                 context.getString(R.string.hint_payment_unfinished, 5),
             ),
         )
@@ -55,7 +55,7 @@ class EnglishUiScreenshotTest {
             file = File(artifacts, "english-fee-detail-light.png"),
             background = Color.WHITE,
             lines = listOf(
-                "Autumn trip fee",
+                "Autumn outing fee",
                 context.getString(R.string.progress_paid, 7, 12),
                 context.getString(R.string.copy_wechat_reminder),
                 context.getString(R.string.record_to_ledger),
@@ -69,7 +69,7 @@ class EnglishUiScreenshotTest {
             background = Color.parseColor("#121212"),
             textColor = Color.WHITE,
             lines = listOf(
-                "Class 2, Grade 12",
+                "Weekend Badminton Club",
                 context.resources.getQuantityString(R.plurals.members_in_class, 12, 12),
             ),
         )

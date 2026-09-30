@@ -28,11 +28,11 @@ class UnfinishedExportTest {
                 id = 1,
                 scopeType = ScopeType.CLASS,
                 type = ActivityType.SPLIT,
-                title = "寝室水电",
+                title = "场地费分摊",
                 createdAt = 0,
                 updatedAt = 0
             ),
-            scopeLabel = "全班",
+            scopeLabel = "全体",
             rows = listOf(
                 ActivityMemberRow(
                     member = ActivityMember(1, 1, MemberStatus.PENDING, 3300, 0, null, updatedAt = 0),
@@ -61,6 +61,6 @@ class UnfinishedExportTest {
             1_726_272_000_000L
         )
         assertTrue(titles.any { it.startsWith("今日点名") })
-        assertTrue(ActivityTemplates.titles(ActivityType.SPLIT, context).any { it.contains("寝室") })
+        assertTrue(ActivityTemplates.titles(ActivityType.SPLIT, context).any { it.contains("场地费") })
     }
 }

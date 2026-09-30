@@ -26,7 +26,7 @@ internal object DemoContent {
     )
 
     val english = Pack(
-        className = "Class 2, Grade 12",
+        className = "Weekend Badminton Club",
         members = listOf(
             DemoMemberSpec("Alice Chen", "2026001"),
             DemoMemberSpec("Bob Liu", "2026002"),
@@ -41,42 +41,42 @@ internal object DemoContent {
             DemoMemberSpec("Kelly Zhou", "2026011"),
             DemoMemberSpec("Leo Yang", "2026012"),
         ),
-        subgroupName = "Dorm 301",
+        subgroupName = "Squad A",
         subgroupMemberIndices = listOf(0, 1, 2, 3),
         activities = listOf(
             DemoActivitySpec(
-                title = "Morning roll call",
+                title = "Saturday session check-in",
                 type = com.classrecord.app.data.entity.ActivityType.ATTENDANCE,
-                note = "First period homeroom check-in.",
+                note = "Weekly court booking check-in.",
                 doneCount = 8,
             ),
             DemoActivitySpec(
-                title = "Sports day sign-up",
+                title = "Tournament sign-up",
                 type = com.classrecord.app.data.entity.ActivityType.CHECKLIST,
-                note = "Sign up for relay and field events.",
+                note = "Sign up for singles and doubles.",
                 doneCount = 9,
             ),
             DemoActivitySpec(
-                title = "Autumn trip fee",
+                title = "Autumn outing fee",
                 type = com.classrecord.app.data.entity.ActivityType.PAYMENT,
-                note = "Includes bus and lunch.",
+                note = "Includes transport and lunch.",
                 perPersonDueFen = 20_000L,
                 paidCount = 7,
             ),
             DemoActivitySpec(
-                title = "Dorm water split",
+                title = "Court fee split",
                 type = com.classrecord.app.data.entity.ActivityType.SPLIT,
-                note = "September water bill for Dorm 301.",
+                note = "September court rental for Squad A.",
                 scopeSubgroup = true,
                 totalSplitFen = 12_000L,
             ),
         ),
-        ledgerIncomeTitle = "Class fund top-up",
-        ledgerExpenseTitle = "Class supplies",
+        ledgerIncomeTitle = "Group fund top-up",
+        ledgerExpenseTitle = "Shuttlecocks",
     )
 
     val chinese = Pack(
-        className = "高三（2）班",
+        className = "周末羽毛球群",
         members = listOf(
             DemoMemberSpec("张三", "2026001"),
             DemoMemberSpec("李四", "2026002"),
@@ -91,37 +91,37 @@ internal object DemoContent {
             DemoMemberSpec("冯十三", "2026011"),
             DemoMemberSpec("陈十四", "2026012"),
         ),
-        subgroupName = "301 寝室",
+        subgroupName = "A 组",
         subgroupMemberIndices = listOf(0, 1, 2, 3),
         activities = listOf(
             DemoActivitySpec(
-                title = "早自习点名",
+                title = "周六活动点名",
                 type = com.classrecord.app.data.entity.ActivityType.ATTENDANCE,
-                note = "第一节课前签到。",
+                note = "每周场地签到。",
                 doneCount = 8,
             ),
             DemoActivitySpec(
-                title = "运动会报名",
+                title = "比赛报名",
                 type = com.classrecord.app.data.entity.ActivityType.CHECKLIST,
-                note = "接力、田赛项目报名。",
+                note = "单打、双打项目报名。",
                 doneCount = 9,
             ),
             DemoActivitySpec(
-                title = "秋游费用",
+                title = "秋季出游费用",
                 type = com.classrecord.app.data.entity.ActivityType.PAYMENT,
-                note = "含大巴与午餐。",
+                note = "含交通与午餐。",
                 perPersonDueFen = 20_000L,
                 paidCount = 7,
             ),
             DemoActivitySpec(
-                title = "寝室水费分摊",
+                title = "场地费分摊",
                 type = com.classrecord.app.data.entity.ActivityType.SPLIT,
-                note = "301 寝室 9 月水费。",
+                note = "A 组 9 月场地费。",
                 scopeSubgroup = true,
                 totalSplitFen = 12_000L,
             ),
         ),
-        ledgerIncomeTitle = "班费补充",
-        ledgerExpenseTitle = "班级用品",
+        ledgerIncomeTitle = "团费补充",
+        ledgerExpenseTitle = "球费购置",
     )
 }

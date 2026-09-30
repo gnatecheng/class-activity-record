@@ -6,16 +6,16 @@
 
 Android app for tracking group activities—attendance, payments, expense splits, and checklists—for any small group (class, club, dorm, team, etc.). Data stays on device (Room); no account or network required.
 
-- **App name:** 多人事务 (English UI: **Group Matters**)
+- **App name:** 团团记 (English UI: **Group Matters**)
 - **applicationId:** `com.classrecord.app`
 - **Minimum OS:** Android 8.0 (API 26)
-- **Version:** 1.5.1 (versionCode 8)
+- **Version:** 1.5.2 (versionCode 9)
 - **UI languages:** Simplified Chinese / English (switch in Settings)
 
 ## Features
 
 - One group profile: editable group name
-- Add, edit, and soft-archive members (optional student ID and notes); bulk paste import
+- Add, edit, and soft-archive members (optional member ID and notes); bulk paste import
 - Subgroups within the group: multi-select members; a member can belong to several subgroups; empty subgroups cannot be activity scopes
 - Four activity types: attendance / payment / split / checklist
 - Activity scope: whole group or a subgroup; member list is snapshotted at creation—later subgroup edits do not change history
@@ -26,16 +26,23 @@ Android app for tracking group activities—attendance, payments, expense splits
 - Group ledger: income/expense entries and balance; payment activities can post collected totals to the ledger
 - Backup / restore (zip, includes payment receipt images); export members, activity progress, and ledger CSV
 - Split: exclude members, weight or fixed amounts; payment/split notes and photo attachments
-- Optional sort by student ID; attendance supports continuous roll call
+- Optional sort by member ID; attendance supports continuous roll call
 - Home screen widget: unfinished counts for recent in-progress activities (with combined total when several); tap opens the app
 - Home search by title; filter active / archived; archive or unarchive from detail menu
 - Dark theme: Material 3, follow system or fixed light/dark in Settings (DataStore)
 - Reminder text formatted for WeChat-style group messages (one line per person with amounts); copy/share unfinished lists and CSV from detail
-- Bulk import: student ID first, tab-separated paste; hints for duplicate names/IDs; restore archived members while keeping history
-- Quick title templates for roll call, group fund, dorm split, etc. when creating activities or opening a new period
+- Bulk import: member ID first, tab-separated paste; hints for duplicate names/IDs; restore archived members while keeping history
+- Quick title templates for roll call, group fund, shared expense split, etc. when creating activities or opening a new period
 - **Settings → About:** version, build time, GitHub repository link
 
 ## Changelog
+
+### 1.5.2
+
+- Chinese app name **团团记** (renamed from 多人事务 to 团团记; English name **Group Matters** unchanged)
+- Unified **group fund** wording (was “class fund” in English UI)
+- New launcher icon featuring **团**; refreshed homepage screenshot sets
+- Neutral **group / member** wording throughout (no class- or school-specific UI copy); demo data uses a generic club-style group
 
 ### 1.5.1
 

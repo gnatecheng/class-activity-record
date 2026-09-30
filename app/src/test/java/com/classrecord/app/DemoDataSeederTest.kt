@@ -54,7 +54,7 @@ class DemoDataSeederTest {
     @Test
     fun seedsEnglishPackWhenRequested() = runBlocking {
         assertTrue(seeder.seedIfEmpty(english = true))
-        assertEquals("Class 2, Grade 12", classRepository.get()?.name)
+        assertEquals("Weekend Badminton Club", classRepository.get()?.name)
         assertTrue(!seeder.canSeed())
     }
 

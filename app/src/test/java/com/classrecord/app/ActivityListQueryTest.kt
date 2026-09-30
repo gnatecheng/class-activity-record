@@ -95,7 +95,7 @@ private fun item(
             createdAt = id,
             updatedAt = id
         ),
-        scopeLabel = "全班",
+        scopeLabel = "全体",
         doneCount = 10 - unfinished,
         totalCount = 10,
         unfinishedCount = unfinished
