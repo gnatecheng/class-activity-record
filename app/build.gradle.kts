@@ -5,7 +5,10 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    id("io.github.takahirom.roborazzi")
 }
+
+val roborazziVersion = "1.43.0"
 
 android {
     namespace = "com.classrecord.app"
@@ -60,6 +63,10 @@ android {
     }
 }
 
+roborazzi {
+    outputDir.set(file("build/homepage-screenshots-raw"))
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
@@ -88,4 +95,16 @@ dependencies {
     testImplementation("androidx.test:core:1.6.1")
     testImplementation(platform(libs.androidx.compose.bom))
     testImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation("androidx.compose.ui:ui-test-manifest")
+    testImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    testImplementation("androidx.lifecycle:lifecycle-runtime-testing:${libs.versions.lifecycle.get()}")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi:$roborazziVersion")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:$roborazziVersion")
+}
+
+tasks.register<Exec>("exportHomepageScreenshots") {
+    group = "verification"
+    description = "Convert Roborazzi PNG captures to WebP under docs/screenshots/homepage/"
+    dependsOn("recordRoborazziDebug")
+    commandLine("python3", "${rootProject.projectDir}/scripts/export-homepage-screenshots.py")
 }
