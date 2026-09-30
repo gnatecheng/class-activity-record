@@ -134,7 +134,7 @@ fun LedgerScreen(onBack: () -> Unit) {
                     Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
                         Text(stringResource(R.string.ledger_balance_label), style = MaterialTheme.typography.labelLarge)
                         Text(
-                            Money.formatYuan(state.balanceFen),
+                            Money.formatDisplay(LocalContext.current, state.balanceFen),
                             style = MaterialTheme.typography.headlineMedium,
                             color = if (state.balanceFen >= 0) {
                                 MaterialTheme.appColors.success
@@ -176,7 +176,7 @@ fun LedgerScreen(onBack: () -> Unit) {
                             Row {
                                 Text(
                                     (if (entry.type == LedgerType.INCOME) "+" else "−") +
-                                        Money.formatFen(entry.amountFen),
+                                        Money.formatDisplay(LocalContext.current, entry.amountFen),
                                     color = if (entry.type == LedgerType.INCOME) {
                                         MaterialTheme.appColors.success
                                     } else {

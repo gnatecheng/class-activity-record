@@ -1,7 +1,7 @@
 package com.classrecord.app
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -40,9 +40,15 @@ import com.classrecord.app.ui.settings.SettingsScreen
 import com.classrecord.app.ui.subgroups.SubGroupEditScreen
 import com.classrecord.app.ui.subgroups.SubGroupsScreen
 import com.classrecord.app.ui.theme.ClassRecordTheme
+import kotlinx.coroutines.runBlocking
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        val app = application as ClassRecordApp
+        runBlocking {
+            app.container.userPrefs.applyPendingLocaleIfNeeded(this@MainActivity)
+            app.container.userPrefs.syncStoredLanguageFromFramework()
+        }
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
@@ -69,6 +75,14 @@ class MainActivity : ComponentActivity() {
             ClassRecordTheme(darkTheme = darkTheme) {
                 ClassRecordRoot()
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val app = application as ClassRecordApp
+        runBlocking {
+            app.container.userPrefs.syncStoredLanguageFromFramework()
         }
     }
 }

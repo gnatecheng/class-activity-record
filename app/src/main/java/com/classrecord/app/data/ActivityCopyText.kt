@@ -54,7 +54,7 @@ object ActivityCopyText {
             append(context.getString(R.string.copy_reminder_header, activity.title))
             append('\n')
             append("${detail.scopeLabel} · ${strings.activityType(activity.type)}\n")
-            append(context.getString(R.string.copy_please_verb, strings.copyVerb(activity.type)))
+            append(pleaseLine(context, activity.type))
             append("\n\n")
             append(context.getString(R.string.copy_unfinished_count, pending.size))
             if (isMoney(activity.type)) {
@@ -148,4 +148,11 @@ object ActivityCopyText {
 
     private fun formatMoney(context: Context, fen: Long): String =
         context.getString(R.string.money_yuan, Money.formatFen(fen))
+
+    private fun pleaseLine(context: Context, type: ActivityType): String =
+        when (type) {
+            ActivityType.ATTENDANCE -> context.getString(R.string.copy_please_attendance)
+            ActivityType.PAYMENT, ActivityType.SPLIT -> context.getString(R.string.copy_please_payment)
+            ActivityType.CHECKLIST -> context.getString(R.string.copy_please_checklist)
+        }
 }

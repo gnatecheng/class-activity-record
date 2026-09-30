@@ -29,7 +29,7 @@
     <string name="action_new">新建</string>
     <string name="settings_title">设置</string>
     <string name="settings_appearance">外观</string>
-    <string name="settings_theme_title">深色主题</string>
+    <string name="settings_theme_title">主题</string>
     <string name="settings_theme_desc">可跟随系统，或在应用内固定浅色 / 深色。深色模式使用 Material 3 语义色，状态与金额对比清晰。</string>
     <string name="settings_language_title">语言</string>
     <string name="settings_language_desc">默认：系统为英文时用英文，否则中文。可随时切换。</string>
@@ -74,9 +74,6 @@
     <string name="csv_activities">事务进度.csv</string>
     <string name="csv_ledger">班费账本.csv</string>
     <string name="unnamed_class">未命名班级</string>
-    <string name="members_in_class">在班 %1$d 人</string>
-    <string name="count_people">%1$d 人</string>
-    <string name="count_groups">%1$d 个</string>
     <string name="home_members">成员</string>
     <string name="home_subgroups">小团体</string>
     <string name="home_ledger">班费账本</string>
@@ -109,7 +106,7 @@
     <string name="hint_all_done">已完成</string>
     <string name="hint_attendance_unfinished">%1$d人未到</string>
     <string name="hint_payment_unfinished">%1$d人未缴</string>
-    <string name="hint_checklist_unfinished">%1$d项未完成</string>
+    <string name="hint_checklist_unfinished">%1$d人未完成</string>
     <string name="class_edit_title">班级名称</string>
     <string name="err_class_name_required">请填写班级名称</string>
     <string name="onboarding_title">开始使用</string>
@@ -238,10 +235,15 @@
     <string name="msg_archive_failed">无法更新归档</string>
     <string name="total_prefix">总额 %1$s</string>
     <string name="progress_prefix">进度 %1$d/%2$d</string>
+    <string name="progress_paid">已缴 %1$d/%2$d</string>
+    <string name="onboarding_load_sample">加载示例班级</string>
+    <string name="demo_seed_unavailable">已有班级数据，无法加载示例。</string>
+    <string name="demo_seed_failed">加载示例失败</string>
     <string name="hint_tap_attendance">点按切换未到/已到，长按请假</string>
     <string name="hint_tap_payment">点按切换已缴/未缴；点编辑可改金额</string>
     <string name="hint_tap_checklist">点按切换完成状态</string>
     <string name="filter_unfinished_only">仅未完成</string>
+    <string name="filter_attendance_not_checked_in">仅未到</string>
     <string name="roll_call_continuous">连续点名</string>
     <string name="wechat_hint">催缴与导出可直接发微信群：一人一行，含金额。</string>
     <string name="copy_wechat_reminder">复制催缴（微信）</string>
@@ -322,6 +324,9 @@
     <string name="copy_all_done">【%1$s】%2$s已全部完成，谢谢。</string>
     <string name="copy_reminder_header">【催缴】%1$s</string>
     <string name="copy_please_verb">还请尽快%1$s，谢谢。</string>
+    <string name="copy_please_attendance">还请尽快到场，谢谢。</string>
+    <string name="copy_please_payment">还请尽快缴费，谢谢。</string>
+    <string name="copy_please_checklist">还请尽快完成，谢谢。</string>
     <string name="copy_unfinished_count">未完成 %1$d 人</string>
     <string name="copy_unfinished_with_total">，合计 %1$s</string>
     <string name="copy_unfinished_list_title">%1$s 未完成名单</string>

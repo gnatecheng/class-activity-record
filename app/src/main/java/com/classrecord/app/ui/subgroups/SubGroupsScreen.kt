@@ -59,6 +59,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.classrecord.app.R
 
@@ -155,7 +156,11 @@ private fun GroupRow(item: SubGroupWithMembers, onClick: () -> Unit) {
                 val extra = if (empty) {
                     stringResource(R.string.subgroup_no_members)
                 } else {
-                    stringResource(R.string.count_people, item.memberIds.size) +
+                    pluralStringResource(
+                        R.plurals.count_people,
+                        item.memberIds.size,
+                        item.memberIds.size,
+                    ) +
                         if (preview.isNotBlank()) " · $preview" else ""
                 }
                 Text(

@@ -3,6 +3,7 @@ package com.classrecord.app.ui.settings
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -50,6 +51,10 @@ import com.classrecord.app.BuildConfig
 import com.classrecord.app.R
 import com.classrecord.app.i18n.AppLanguage
 import com.classrecord.app.i18n.DateFormats
+import com.classrecord.app.i18n.LocaleApplier
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -82,7 +87,13 @@ class SettingsViewModel(
 ) : ViewModel() {
     val sortByStudentNo = userPrefs.sortByStudentNo
     val themeMode = userPrefs.themeMode
-    val appLanguage = userPrefs.appLanguage
+
+    private val _appliedLanguage = MutableStateFlow(LocaleApplier.readAppliedLanguage(appContext))
+    val appliedLanguage: StateFlow<AppLanguage> = _appliedLanguage.asStateFlow()
+
+    init {
+        viewModelScope.launch { refreshAppliedLanguage() }
+    }
 
     fun setSortByStudentNo(value: Boolean) {
         viewModelScope.launch { userPrefs.setSortByStudentNo(value) }
@@ -93,7 +104,28 @@ class SettingsViewModel(
     }
 
     fun setAppLanguage(language: AppLanguage) {
-        viewModelScope.launch { userPrefs.setAppLanguage(language) }
+        viewModelScope.launch {
+            userPrefs.setAppLanguage(language)
+            refreshAppliedLanguage()
+        }
+    }
+
+    private suspend fun refreshAppliedLanguage() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // Read-only sync for chips; never push DataStore back to LocaleManager here.
+            _appliedLanguage.value = userPrefs.syncStoredLanguageFromFramework()
+            return
+        }
+        val stored = userPrefs.appLanguage.first()
+        when (stored) {
+            AppLanguage.SYSTEM -> _appliedLanguage.value = AppLanguage.SYSTEM
+            else -> {
+                if (LocaleApplier.readAppliedLanguage(appContext) != stored) {
+                    LocaleApplier.apply(appContext, stored, allowClearToSystem = false)
+                }
+                _appliedLanguage.value = stored
+            }
+        }
     }
 
     suspend fun backupTo(uri: Uri) = backupRepository.writeZipTo(uri)
@@ -151,7 +183,7 @@ fun SettingsScreen(onBack: () -> Unit) {
     val vm: SettingsViewModel = viewModel(factory = AppViewModelFactory(app.container))
     val sortByNo by vm.sortByStudentNo.collectAsStateWithLifecycle(initialValue = true)
     val themeMode by vm.themeMode.collectAsStateWithLifecycle(initialValue = ThemeMode.SYSTEM)
-    val appLanguage by vm.appLanguage.collectAsStateWithLifecycle(initialValue = AppLanguage.SYSTEM)
+    val appLanguage by vm.appliedLanguage.collectAsStateWithLifecycle(initialValue = AppLanguage.SYSTEM)
     val uriHandler = LocalUriHandler.current
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -306,7 +338,11 @@ fun SettingsScreen(onBack: () -> Unit) {
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(Modifier.weight(1f)) {
+                    Column(
+                        Modifier
+                            .weight(1f)
+                            .padding(end = 12.dp)
+                    ) {
                         Text(stringResource(R.string.settings_sort_by_no), style = MaterialTheme.typography.titleSmall)
                         Text(
                             stringResource(R.string.settings_sort_desc),

@@ -46,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -138,7 +139,7 @@ fun HomeScreen(
                     Column {
                         Text(className, fontWeight = FontWeight.SemiBold)
                         Text(
-                            stringResource(R.string.members_in_class, state.memberCount),
+                            pluralStringResource(R.plurals.members_in_class, state.memberCount, state.memberCount),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -184,7 +185,7 @@ fun HomeScreen(
                     ShortcutCard(
                         modifier = Modifier.weight(1f),
                         title = stringResource(R.string.home_members),
-                        subtitle = stringResource(R.string.count_people, state.memberCount),
+                        subtitle = pluralStringResource(R.plurals.count_people, state.memberCount, state.memberCount),
                         containerColor = MaterialTheme.appColors.memberShortcut,
                         icon = {
                             Icon(
@@ -198,7 +199,7 @@ fun HomeScreen(
                     ShortcutCard(
                         modifier = Modifier.weight(1f),
                         title = stringResource(R.string.home_subgroups),
-                        subtitle = stringResource(R.string.count_groups, state.subGroupCount),
+                        subtitle = pluralStringResource(R.plurals.count_groups, state.subGroupCount, state.subGroupCount),
                         containerColor = MaterialTheme.appColors.groupShortcut,
                         icon = {
                             Icon(
@@ -217,7 +218,7 @@ fun HomeScreen(
                     title = stringResource(R.string.home_ledger),
                     subtitle = stringResource(
                         R.string.home_ledger_balance,
-                        Money.formatYuan(state.ledgerBalanceFen)
+                        Money.formatDisplay(LocalContext.current, state.ledgerBalanceFen)
                     ),
                     containerColor = MaterialTheme.appColors.ledgerShortcut,
                     icon = {
