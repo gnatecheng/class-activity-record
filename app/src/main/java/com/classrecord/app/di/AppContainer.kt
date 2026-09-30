@@ -26,10 +26,13 @@ import com.classrecord.app.ui.settings.SettingsViewModel
 import com.classrecord.app.ui.subgroups.SubGroupEditViewModel
 import com.classrecord.app.ui.subgroups.SubGroupsViewModel
 
-class AppContainer(context: Context) {
+class AppContainer(
+    context: Context,
+    databaseOverride: AppDatabase? = null,
+) {
     val appContext: Context = context.applicationContext
     val appStrings = AppStrings(appContext)
-    val database: AppDatabase = AppDatabase.create(appContext)
+    val database: AppDatabase = databaseOverride ?: AppDatabase.create(appContext)
     val userPrefs = UserPrefs(appContext)
     val attachmentStore = AttachmentStore(appContext, appStrings)
     val classRepository = ClassRepository(database)

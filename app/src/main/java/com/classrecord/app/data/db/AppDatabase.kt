@@ -94,5 +94,13 @@ abstract class AppDatabase : RoomDatabase() {
                 "class_record.db"
             ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
         }
+
+        /** In-memory database for JVM screenshot tests only. */
+        fun createInMemory(context: Context): AppDatabase {
+            return Room.inMemoryDatabaseBuilder(
+                context.applicationContext,
+                AppDatabase::class.java,
+            ).allowMainThreadQueries().build()
+        }
     }
 }
