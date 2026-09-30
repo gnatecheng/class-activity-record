@@ -51,10 +51,10 @@
     <string name="settings_export_csv">Export CSV</string>
     <string name="settings_export_members">Export member list</string>
     <string name="settings_export_activities">Export all activity progress</string>
-    <string name="settings_export_ledger">Export class fund ledger</string>
+    <string name="settings_export_ledger">Export group fund ledger</string>
     <string name="settings_share_members_csv">Share member CSV</string>
     <string name="settings_restore_title">Restore backup?</string>
-    <string name="settings_restore_body">This will replace all class data on this device (members, groups, activities, class fund, and payment proofs) and cannot be undone. Continue?</string>
+    <string name="settings_restore_body">This will replace all class data on this device (members, groups, activities, group fund, and payment proofs) and cannot be undone. Continue?</string>
     <string name="settings_restore_confirm">Replace and restore</string>
     <string name="settings_about_title">About</string>
     <string name="settings_about_version">Version</string>
@@ -76,7 +76,7 @@
     <string name="unnamed_class">Unnamed class</string>
     <string name="home_members">Members</string>
     <string name="home_subgroups">Groups</string>
-    <string name="home_ledger">Class fund</string>
+    <string name="home_ledger">Group fund</string>
     <string name="home_ledger_balance">Balance %1$s</string>
     <string name="home_activities">Activities</string>
     <string name="home_search">Search activities</string>
@@ -169,9 +169,9 @@ Dan, Eve</string>
     <string name="subgroup_select_members">Select members (optional, multiple)</string>
     <string name="subgroup_members_hint">Changing members doesn\'t affect past activities.</string>
     <string name="err_subgroup_name">Enter a name</string>
-    <string name="ledger_title">Class fund</string>
+    <string name="ledger_title">Group fund</string>
     <string name="ledger_balance_label">Current balance</string>
-    <string name="ledger_balance_hint">Income minus expenses. To record a fee collection, open it and tap “Add collected fees to class fund”.</string>
+    <string name="ledger_balance_hint">Income minus expenses. To record a fee collection, open it and tap “Add collected fees to group fund”.</string>
     <string name="ledger_empty_title">No entries yet</string>
     <string name="ledger_empty_sub">Tap Add entry for income or expense, or post totals from fee collection or cost split activities.</string>
     <string name="ledger_income">Income</string>
@@ -179,7 +179,7 @@ Dan, Eve</string>
     <string name="ledger_add_title">Add entry</string>
     <string name="ledger_summary">Description</string>
     <string name="ledger_amount">Amount (¥)</string>
-    <string name="ledger_income_hint">e.g. Class fund deposit</string>
+    <string name="ledger_income_hint">e.g. Group fund deposit</string>
     <string name="ledger_expense_hint">e.g. Cleaning supplies</string>
     <string name="err_invalid_amount">Enter a valid amount</string>
     <string name="err_save_failed">Couldn\'t save</string>
@@ -247,10 +247,10 @@ Dan, Eve</string>
     <string name="roll_call_continuous">Quick roll call</string>
     <string name="wechat_hint">Reminders are formatted for WeChat groups: one person per line, with amounts when relevant.</string>
     <string name="copy_wechat_reminder">Copy reminder (WeChat)</string>
-    <string name="record_to_ledger">Add collected fees to class fund</string>
-    <string name="recorded_to_ledger">Collected fees added to class fund</string>
-    <string name="msg_recorded_ledger">Added to class fund</string>
-    <string name="msg_record_failed">Couldn\'t add to class fund</string>
+    <string name="record_to_ledger">Add collected fees to group fund</string>
+    <string name="recorded_to_ledger">Collected fees added to group fund</string>
+    <string name="msg_recorded_ledger">Added to group fund</string>
+    <string name="msg_record_failed">Couldn\'t add to group fund</string>
     <string name="no_unfinished_members">All done</string>
     <string name="no_member_snapshot">No member snapshot</string>
     <string name="reuse_title">Start new round</string>
@@ -307,7 +307,7 @@ Dan, Eve</string>
     <string name="err_source_missing">Original activity not found</string>
     <string name="err_ledger_amount">Amount must be greater than zero</string>
     <string name="err_ledger_summary">Enter a description</string>
-    <string name="err_already_in_ledger">Already added to class fund</string>
+    <string name="err_already_in_ledger">Already added to group fund</string>
     <string name="err_no_paid_yet">Nothing collected yet</string>
     <string name="ledger_from_activity">From %1$s activity</string>
     <string name="ledger_paid_total_title">%1$s — collected total</string>
@@ -372,7 +372,7 @@ Dan, Eve</string>
     <string name="template_attendance_today">Roll call today (%1$s)</string>
     <string name="template_attendance_morning">Morning attendance (%1$s)</string>
     <string name="template_attendance_evening">Evening study roll call (%1$s)</string>
-    <string name="template_payment_class">Class fund (%1$d)</string>
+    <string name="template_payment_class">Group fund (%1$d)</string>
     <string name="template_payment_event">Event fees (%1$s)</string>
     <string name="template_split_dorm">Dorm utilities split</string>
     <string name="template_split_meal">Meal split (%1$s)</string>

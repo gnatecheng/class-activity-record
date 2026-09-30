@@ -18,8 +18,8 @@ android {
         applicationId = "com.classrecord.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 8
-        versionName = "1.5.1"
+        versionCode = 9
+        versionName = "1.5.2"
         val buildTimeIso = Instant.now().toString()
         buildConfigField("String", "BUILD_TIME_ISO", "\"$buildTimeIso\"")
     }

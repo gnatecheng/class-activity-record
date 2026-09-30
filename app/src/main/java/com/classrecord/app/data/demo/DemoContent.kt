@@ -71,7 +71,7 @@ internal object DemoContent {
                 totalSplitFen = 12_000L,
             ),
         ),
-        ledgerIncomeTitle = "Class fund top-up",
+        ledgerIncomeTitle = "Group fund top-up",
         ledgerExpenseTitle = "Class supplies",
     )
 
@@ -121,7 +121,7 @@ internal object DemoContent {
                 totalSplitFen = 12_000L,
             ),
         ),
-        ledgerIncomeTitle = "班费补充",
+        ledgerIncomeTitle = "团费补充",
         ledgerExpenseTitle = "班级用品",
     )
 }

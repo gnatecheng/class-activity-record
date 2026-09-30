@@ -1,15 +1,15 @@
 [English](README.md) | **中文**
 
-[主页：Etai 应用集 — 多人事务](https://etais.dev/#group-matters)
+[主页：Etai 应用集 — 团团记](https://etais.dev/#group-matters)
 
-# 多人事务
+# 团团记
 
 面向任意小团体的 Android 事务记录应用：出勤、缴费、费用分摊、清单。数据保存在本机（Room），无需登录或联网。
 
-- **应用名称**：多人事务（英文界面：**Group Matters**）
+- **应用名称**：团团记（英文界面：**Group Matters**）
 - **applicationId**：`com.classrecord.app`
 - **最低系统**：Android 8.0（API 26）
-- **版本**：1.5.1（versionCode 8）
+- **版本**：1.5.2（versionCode 9）
 - **界面语言**：简体中文 / English（设置内可切换）
 
 ## 功能
@@ -35,6 +35,12 @@
 - **设置 → 关于**：版本号、构建时间、GitHub 仓库链接
 
 ## 更新日志
+
+### 1.5.2
+
+- 中文应用名 **团团记**（多人事务更名为团团记；英文 **Group Matters** 不变）
+- 统一 **团费账本 / 团费** 用语（原「班费账本 / 班费」）
+- 新启动图标（「团」字）；首页截图集已重新生成
 
 ### 1.5.1
 

@@ -6,10 +6,10 @@
 
 Android app for tracking group activities—attendance, payments, expense splits, and checklists—for any small group (class, club, dorm, team, etc.). Data stays on device (Room); no account or network required.
 
-- **App name:** 多人事务 (English UI: **Group Matters**)
+- **App name:** 团团记 (English UI: **Group Matters**)
 - **applicationId:** `com.classrecord.app`
 - **Minimum OS:** Android 8.0 (API 26)
-- **Version:** 1.5.1 (versionCode 8)
+- **Version:** 1.5.2 (versionCode 9)
 - **UI languages:** Simplified Chinese / English (switch in Settings)
 
 ## Features
@@ -36,6 +36,12 @@ Android app for tracking group activities—attendance, payments, expense splits
 - **Settings → About:** version, build time, GitHub repository link
 
 ## Changelog
+
+### 1.5.2
+
+- Chinese app name **团团记** (renamed from 多人事务 to 团团记; English name **Group Matters** unchanged)
+- Unified **group fund** wording (was “class fund” in English UI)
+- New launcher icon featuring **团**; refreshed homepage screenshot sets
 
 ### 1.5.1
 

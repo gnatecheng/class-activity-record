@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">多人事务</string>
+    <string name="app_name">团团记</string>
     <string name="widget_name">未完成人数</string>
     <string name="widget_description">显示近期进行中事务的未完成人数，点按打开应用。</string>
     <string name="widget_unfinished">未完成</string>
@@ -44,14 +44,14 @@
     <string name="settings_sort_desc">学号为空的排在后面，再按姓名。成员名单和事务详情都会使用。</string>
     <string name="settings_backup_title">备份与恢复</string>
     <string name="settings_backup_desc">备份为 zip（含 JSON 与缴费凭证图片）。恢复会覆盖本机全部班级数据。</string>
-    <string name="settings_backup_file">多人事务-备份.zip</string>
+    <string name="settings_backup_file">团团记-备份.zip</string>
     <string name="settings_backup_save">备份到文件</string>
     <string name="settings_backup_share">分享备份</string>
     <string name="settings_backup_restore">从备份恢复</string>
     <string name="settings_export_csv">导出 CSV</string>
     <string name="settings_export_members">导出成员名单</string>
     <string name="settings_export_activities">导出全部事务进度</string>
-    <string name="settings_export_ledger">导出班费账本</string>
+    <string name="settings_export_ledger">导出团费账本</string>
     <string name="settings_share_members_csv">分享成员 CSV</string>
     <string name="settings_restore_title">恢复备份？</string>
     <string name="settings_restore_body">将覆盖本机全部班级数据（成员、小团体、事务、账本和缴费凭证），且无法撤销。确定继续？</string>
@@ -72,11 +72,11 @@
     <string name="share_members_csv">分享成员 CSV</string>
     <string name="csv_members">班级成员.csv</string>
     <string name="csv_activities">事务进度.csv</string>
-    <string name="csv_ledger">班费账本.csv</string>
+    <string name="csv_ledger">团费账本.csv</string>
     <string name="unnamed_class">未命名班级</string>
     <string name="home_members">成员</string>
     <string name="home_subgroups">小团体</string>
-    <string name="home_ledger">班费账本</string>
+    <string name="home_ledger">团费账本</string>
     <string name="home_ledger_balance">余额 %1$s</string>
     <string name="home_activities">事务</string>
     <string name="home_search">搜索事务</string>
@@ -169,9 +169,9 @@
     <string name="subgroup_select_members">选择成员（可多选，可为空）</string>
     <string name="subgroup_members_hint">修改成员不会影响已经创建的历史事务。</string>
     <string name="err_subgroup_name">请填写名称</string>
-    <string name="ledger_title">班费账本</string>
+    <string name="ledger_title">团费账本</string>
     <string name="ledger_balance_label">当前余额</string>
-    <string name="ledger_balance_hint">收入减支出。缴费事务可在详情页「将已收合计记入班费」。</string>
+    <string name="ledger_balance_hint">收入减支出。缴费事务可在详情页「将已收合计记入团费」。</string>
     <string name="ledger_empty_title">还没有流水</string>
     <string name="ledger_empty_sub">点右下角记一笔收入或支出，或从缴费/分摊事务记入已收合计。</string>
     <string name="ledger_income">收入</string>
@@ -179,7 +179,7 @@
     <string name="ledger_add_title">记一笔</string>
     <string name="ledger_summary">摘要</string>
     <string name="ledger_amount">金额（元）</string>
-    <string name="ledger_income_hint">例如：班费收入</string>
+    <string name="ledger_income_hint">例如：团费收入</string>
     <string name="ledger_expense_hint">例如：买扫把</string>
     <string name="err_invalid_amount">请填写有效金额</string>
     <string name="err_save_failed">无法保存</string>
@@ -197,7 +197,7 @@
     <string name="wizard_title_label">标题</string>
     <string name="wizard_title_attendance">例如：周一早读出勤</string>
     <string name="wizard_title_payment">例如：秋游费用</string>
-    <string name="wizard_title_split">例如：班费聚餐</string>
+    <string name="wizard_title_split">例如：团费聚餐</string>
     <string name="wizard_title_checklist">例如：值日检查</string>
     <string name="wizard_templates">快捷模板</string>
     <string name="wizard_deadline_set">设置截止日期（可选）</string>
@@ -247,9 +247,9 @@
     <string name="roll_call_continuous">连续点名</string>
     <string name="wechat_hint">催缴与导出可直接发微信群：一人一行，含金额。</string>
     <string name="copy_wechat_reminder">复制催缴（微信）</string>
-    <string name="record_to_ledger">将已收合计记入班费</string>
-    <string name="recorded_to_ledger">已收合计已记入班费</string>
-    <string name="msg_recorded_ledger">已记入班费</string>
+    <string name="record_to_ledger">将已收合计记入团费</string>
+    <string name="recorded_to_ledger">已收合计已记入团费</string>
+    <string name="msg_recorded_ledger">已记入团费</string>
     <string name="msg_record_failed">无法记入</string>
     <string name="no_unfinished_members">没有未完成的同学</string>
     <string name="no_member_snapshot">没有成员快照</string>
@@ -307,13 +307,13 @@
     <string name="err_source_missing">原事务不存在</string>
     <string name="err_ledger_amount">金额必须大于 0</string>
     <string name="err_ledger_summary">请填写摘要</string>
-    <string name="err_already_in_ledger">该事务已记入班费</string>
+    <string name="err_already_in_ledger">该事务已记入团费</string>
     <string name="err_no_paid_yet">还没有已收金额</string>
     <string name="ledger_from_activity">来自%1$s事务</string>
     <string name="ledger_paid_total_title">%1$s 已收合计</string>
     <string name="err_write_file">无法写入文件</string>
     <string name="err_read_backup">无法读取备份文件</string>
-    <string name="err_not_backup">不是多人事务的备份文件</string>
+    <string name="err_not_backup">不是团团记的备份文件</string>
     <string name="err_no_data_in_backup">备份包里没有数据文件</string>
     <string name="err_write_backup">无法写入备份文件</string>
     <string name="err_read_image">无法读取所选图片</string>
@@ -372,7 +372,7 @@
     <string name="template_attendance_today">今日点名（%1$s）</string>
     <string name="template_attendance_morning">早读出勤（%1$s）</string>
     <string name="template_attendance_evening">晚自习点名（%1$s）</string>
-    <string name="template_payment_class">班费（%1$d月）</string>
+    <string name="template_payment_class">团费（%1$d月）</string>
     <string name="template_payment_event">活动缴费（%1$s）</string>
     <string name="template_split_dorm">寝室水电分摊</string>
     <string name="template_split_meal">聚餐分摊（%1$s）</string>
