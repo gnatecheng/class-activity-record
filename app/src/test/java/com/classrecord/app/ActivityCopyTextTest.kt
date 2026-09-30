@@ -26,13 +26,13 @@ class ActivityCopyTextTest {
             id = 1,
             scopeType = ScopeType.CLASS,
             type = ActivityType.PAYMENT,
-            title = "秋游费用",
+            title = "秋季出游费用",
             createdAt = 0,
             updatedAt = 0
         )
         return ActivityDetail(
             activity = activity,
-            scopeLabel = "全班",
+            scopeLabel = "全体",
             rows = listOf(
                 ActivityMemberRow(
                     member = ActivityMember(1, 1, MemberStatus.DONE, 5000, 5000, null, updatedAt = 0),
@@ -51,7 +51,7 @@ class ActivityCopyTextTest {
     @Test
     fun summaryIncludesTotalsAndUnfinished() {
         val text = ActivityCopyText.summary(paymentDetail(), strings, context)
-        assertTrue(text.contains("【秋游费用】全班"))
+        assertTrue(text.contains("【秋季出游费用】全体"))
         assertTrue(text.contains("进度：1/2"))
         assertTrue(text.contains("应缴合计：100.00 元"))
         assertTrue(text.contains("已缴合计：50.00 元"))
@@ -61,8 +61,8 @@ class ActivityCopyTextTest {
     @Test
     fun reminderIsWeChatReadyNumberedList() {
         val text = ActivityCopyText.reminder(paymentDetail(), strings, context)
-        assertTrue(text.startsWith("【催缴】秋游费用"))
-        assertTrue(text.contains("全班 · 缴费"))
+        assertTrue(text.startsWith("【催缴】秋季出游费用"))
+        assertTrue(text.contains("全体 · 缴费"))
         assertTrue(text.contains("未完成 1 人，合计 50.00 元"))
         assertTrue(text.contains("1. 李四（2023002）  尚欠 50.00 元"))
         assertTrue(!text.contains("张三"))
@@ -72,7 +72,7 @@ class ActivityCopyTextTest {
     @Test
     fun unfinishedPlainIsTabSeparated() {
         val text = ActivityCopyText.unfinishedPlain(paymentDetail(), context)
-        assertTrue(text.startsWith("秋游费用 未完成名单"))
+        assertTrue(text.startsWith("秋季出游费用 未完成名单"))
         assertTrue(text.contains("李四（2023002）\t50.00"))
         assertTrue(text.contains("合计\t50.00"))
         assertTrue(!text.contains("张三"))
@@ -81,12 +81,12 @@ class ActivityCopyTextTest {
     @Test
     fun nextPeriodTitleReplacesDateSuffix() {
         assertEquals(
-            "秋游费用（9月11日）",
-            ActivityCopyText.nextPeriodTitle("秋游费用", "9月11日", english = false)
+            "秋季出游费用（9月11日）",
+            ActivityCopyText.nextPeriodTitle("秋季出游费用", "9月11日", english = false)
         )
         assertEquals(
-            "秋游费用（9月12日）",
-            ActivityCopyText.nextPeriodTitle("秋游费用（9月11日）", "9月12日", english = false)
+            "秋季出游费用（9月12日）",
+            ActivityCopyText.nextPeriodTitle("秋季出游费用（9月11日）", "9月12日", english = false)
         )
     }
 }

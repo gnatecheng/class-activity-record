@@ -55,7 +55,7 @@ class RosterParserTest {
         val result = RosterParser.parse("张三\n李四\n张三", setOf("张三"), strings)
         assertEquals(listOf("李四"), result.toInsert.map { it.name })
         assertEquals(2, result.skippedDuplicate)
-        assertTrue(result.conflicts.any { it.hint.contains("已在班") })
+        assertTrue(result.conflicts.any { it.hint.contains("已在团体") })
     }
 
     @Test
@@ -66,7 +66,7 @@ class RosterParserTest {
         val result = RosterParser.parse("李四 2023001", existing, strings)
         assertEquals(0, result.insertCount)
         assertEquals(1, result.skippedDuplicate)
-        assertTrue(result.conflicts.single().hint.contains("学号 2023001"))
+        assertTrue(result.conflicts.single().hint.contains("编号 2023001"))
     }
 
     @Test
@@ -83,8 +83,8 @@ class RosterParserTest {
 
     @Test
     fun nameOnlyWhenSecondTokenNotStudentNo() {
-        val result = RosterParser.parse("高三二班 值日组", emptySet(), strings).toInsert.single()
-        assertEquals("高三二班 值日组", result.name)
+        val result = RosterParser.parse("周末活动 值班组", emptySet(), strings).toInsert.single()
+        assertEquals("周末活动 值班组", result.name)
         assertNull(result.studentNo)
     }
 }
